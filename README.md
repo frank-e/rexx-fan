@@ -8,3 +8,11 @@ As a macro language Rexx could be compared with [Lisp](https://en.wikipedia.org/
 The scripts in this repo are supposed to work in command line windows (**cmd.exe** shells) on Windows 2000 or later with *ooRexx* or *Regina*, and as long as they do not use special features such as hardlinks they could still/also work on OS/2 or Linux. Untested, check the usual suspects such as backslashes or semicolons instead of slashes or colons on Linux.
 
 
+1. **cmpdel** and **cmplink**: Compare directory trees SRC and DST, **del**ete or hard**link** identical SRC files.
+2. **imm** and **say**: Emulate KEDIT command *imm* or Rexx instruction *say* for one-line scripts or expressions.
+2. **md5**: [MD5](https://en.wikipedia.org/wiki/MD5) test suite 2.1 for test vectors in various IETF RFCs, replacing WayBack [2.0](https://web.archive.org/web/20120918193421/http://omniplex.om.funpic.de/src/md5.cmd). Cf. [RFC 6151](https://tools.ietf.org/html/rfc6151).
+2. **rxtime**: Measure the runtime of a specified command. 
+2. **utf-8**: [UTF-8](https://en.wikipedia.org/wiki/UTF-8) de-/en-coders of OEM codepages 437, 819, 858, 878, 923, and 1252 (incl. test suite).
+2. **utf-tab**: Show magic codepoints for UTF16-BE, UTF16-LE, UTF-8, [UTF-4](https://web.archive.org/web/20110813010254/http://omniplex.om.funpic.de/home/test/utf-4.xml), and UTF-1.
+2. **which**: Oddly on Windows an ordinary **.bat** or rather **.cmd** would be seriously tricky.
+2. **ygrep**: Only a **findstr.exe** wrapper for NT, I'm used to **fgrep** or my (lost) OS/2 *ygrep.cmd*-
