@@ -1,8 +1,18 @@
 /* NT ooREXX:  Create empty VFD (virtual floppy disk) with a FAT. */
-/* Version  :  REXXFAT.rex 0.4, published versions older than 0.3 */
-/*             had no version number.     (Frank Ellermann, 2013) */
+/* Version  :  REXXFAT.rex 0.5, published versions older than 0.3 */
+/*             had no version number.     (Frank Ellermann, 2016) */
 
 /* History  :                                                     */
+/*          -  FIXME:  Add "quick format" feature.                */
+/*          -  FIXME:  Fill unused part of last FAT sector with   */
+/*             F7F, F7FF, F7FFFFF0, or similar (uses zero fill).  */
+/* 0.5      -  Improved interactive part of FATTEST() self-tests. */
+/*          -  Replaced the old TRAP() by a new ERROR() handler.  */
+/*          -  For Regina use <stderr> in PERROR().               */
+/*          -  For less than 320 sectors without 512e reduce the  */
+/*             default MINDIR to 1 instead of 8.  Support legacy  */
+/*             MINDIR defaults 4/7/14/15 for 320 ... 5760 (2.88). */
+/*          -  Added IDLE: HLT; JMP IDLE to dummy VBR boot code.  */
 /* 0.4      -  Intro (comment at the begin) completely rewritten. */
 /*          -  Replaced '512e' hack by SECLEN = 0 to force 512e.  */
 /*             Default FAT1x MINDIR changed from 6 to 8 sectors,  */
@@ -148,7 +158,7 @@
 /*             the VHD footer.                                    */
 /* Raw image:  Other sector sizes are not allowed for VHD images. */
 /*             In these cases the MBR image gets no VHD footer    */
-/*             and has a file extension ".dd" instead of ".vhd"   */
+/*             and has a file extension ".dsk" instead of ".vhd"  */
 /*             or ".vfd".                                         */
 /*             If you use IMDISK.exe to mount VFDs use its option */
 /*             S to specify the sector size for an image.  Do not */
@@ -161,9 +171,14 @@
 /*             dummy partition boot code only displays its volume */
 /*             ID, waits for any key, and exits with INT 18h.     */
 
-   signal on  novalue  name TRAP ;  signal on  syntax name TRAP
-   signal on  failure  name TRAP ;  signal on  halt   name TRAP
-   signal on notready  name TRAP ;  numeric digits 20
+   signal on novalue  name ERROR ;  parse version UTIL REXX .
+   if ( 0 <> x2c( 30 )) | ( REXX <> 5 & REXX < 6.03 )
+      then  exit ERROR( 'untested' UTIL REXX )
+   if 6 <= REXX   then  interpret  'signal on nostring   name ERROR'
+   if 5 <= REXX   then  interpret  'signal on lostdigits name ERROR'
+   signal on halt     name ERROR ;  signal on failure    name ERROR
+   signal on notready name ERROR ;  signal on error      name ERROR
+   numeric digits 20             ;  UTIL = REGUTIL()
 
    if arg() > 1         then  do /* unattended use in REXX script */
       parse arg NOS, MINDIR, NUMFAT, SECLEN, EXTRA
@@ -186,11 +201,11 @@ REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
    ACTIVE = 0                    /* 1: boot first VHD partition   */
    SECSUP = 2**7 2**8 2**9 2**10 2**11 2**12
    LABEL  = 'NO NAME'            /* not yet modified at run time  */
-   OEMID  = 'REXXFAT 0.4'        /* avoid OEMID "NTFS" or "EXFAT" */
+   OEMID  = 'REXXFAT 0.5'        /* avoid OEMID "NTFS" or "EXFAT" */
    VOLSER = MAKEID( 1 )          /* raw binary volume serial id.  */
    VIRGIN = x2c( 'F6' )          /* EBCDIC 'V' for legacy FORMATs */
    INT13H = ''                   /* use specific NOH SPT geometry */
-   MINVHD = 16                   /* padding does not help for VHD */
+   MINVHD = 17                   /* padding does not help for VHD */
    MINVFD = 4096                 /* pad small VFD to MINVFD bytes */
    XFAT32 = 8                    /* FAT32: 2*6+3 instead of 2*3+1 */
 
@@ -201,7 +216,20 @@ REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
    end
    if NOS <= 0 | 2**32 <= NOS       then  return USAGE( NOS )
 
-   if abbrev( '.', MINDIR )         then  MINDIR = 8
+   if abbrev( '.', MINDIR )         then  select
+      when  SECLEN = 0  then  MINDIR =  8 /* V512e: multiple of 8 */
+      when  5760 <  NOS then  MINDIR =  8 /* other: use default 8 */
+      when  5760  = NOS then  MINDIR = 15 /* F0 5760= 80 *2 *36 ? */
+      when  2880 <= NOS then  MINDIR = 14 /* F0 2880= 80 *2 *18   */
+      when  2400 <= NOS then  MINDIR = 14 /* F9 2400= 80 *2 *15   */
+      when  1440 <= NOS then  MINDIR =  7 /* F9 1440= 80 *2 * 9   */
+      when  1280 <= NOS then  MINDIR =  7 /* FB 1280= 80 *2 * 8   */
+      when   720 <= NOS then  MINDIR =  7 /* FD  720= 40 *2 * 9   */
+      when   640 <= NOS then  MINDIR =  7 /* FF  640= 40 *2 * 8   */
+      when   360 <= NOS then  MINDIR =  4 /* FC  360= 40 *1 * 9   */
+      when   320 <= NOS then  MINDIR =  4 /* FE  320= 40 *1 * 8   */
+      otherwise               MINDIR =  1 /* minimum for toy FAT  */
+   end
    if datatype( MINDIR, 'w' ) = 0   then  return USAGE( MINDIR )
    if MINDIR <= 0 then  do       /* ToDo: improve negative "hack" */
       MINDIR = abs( MINDIR )     ;  XFAT32 = 0  /* only for FAT32 */
@@ -309,21 +337,21 @@ REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
       say L || right(  CS * CN, 13 )
    end N
    select
-      when  PARTED = 0     then  VFD = VFDPATH( 'vfd' )
-      when  MINVHD > NOS   then  VFD = VFDPATH( 'dd'  )
-      when  SECLEN = 512   then  VFD = VFDPATH( 'vhd' )
-      otherwise                  VFD = VFDPATH( 'dd'  )
+      when  PARTED = 0        then  VFD = VFDPATH( 'vfd' )
+      when  MINVHD > NOS + 1  then  VFD = VFDPATH( 'dsk' )
+      when  SECLEN = 512      then  VFD = VFDPATH( 'vhd' )
+      otherwise                     VFD = VFDPATH( 'dsk' )
    end
 
    if SECLEN <> 512  then  L = 'with sector size' SECLEN
                      else  L = 'with' NOS 'sectors'
-   L = 'for' VFD L               ;  N = USE1ST
+   L = 'for' VFD L               ;  N = abs( USE1ST )
    select
       when  F.0 = 0  then  do
          L = 'Found no FAT for' NOS 'sectors,' NUMFAT 'FATs,'
          return PERROR( L 'and' MINDIR 'root dir. sectors' )
       end
-      when  USE1ST   then  say 'Uses a' L
+      when  N        then  say 'Uses a' L
       when  F.0 = 1  then  L = 'Pick a' L
       otherwise   L = 'Pick a..' || d2c( F.0 - 1 + c2d( 'a' )) L
    end
@@ -349,7 +377,7 @@ REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
       return PERROR( L )         /* SPARSE requires NTFS + FSUTIL */
    end
    if stream( VFD, 'c', 'query exists' ) <> ''  then  do
-      call UTIL 'SysFileDelete'  ;  L = SysFileDelete( VFD )
+      L = SysFileDelete( VFD )
       if L <> 0   then  return PERROR( L || ': cannot create' VFD )
    end
 
@@ -366,12 +394,12 @@ REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
       when  NOS = 2880     then  N = x2c( 'F0' ) 2 18 /* 1440 KB  */
       when  NOS = 2400     then  N = x2c( 'F9' ) 2 15 /* 1200 KB  */
       when  NOS = 1440     then  N = x2c( 'F9' ) 2  9 /*  720 KB  */
-      /* single sided 80 * 1 * 8 for x2c( 'FA' ) skipped (320 KB) */
       when  NOS = 1280     then  N = x2c( 'FB' ) 2  8 /*  640 KB  */
-      when  NOS =  360     then  N = x2c( 'FC' ) 1  9 /*  180 KB  */
       when  NOS =  720     then  N = x2c( 'FD' ) 2  9 /*  360 KB  */
-      when  NOS =  320     then  N = x2c( 'FE' ) 1  8 /*  160 KB  */
       when  NOS =  640     then  N = x2c( 'FF' ) 2  8 /*  320 KB  */
+      /* single sided 80 * 1 * 8 for x2c( 'FA' ) skipped (320 KB) */
+      when  NOS =  360     then  N = x2c( 'FC' ) 1  9 /*  180 KB  */
+      when  NOS =  320     then  N = x2c( 'FE' ) 1  8 /*  160 KB  */
       otherwise                  N = x2c( 'F0' )      /* unknown  */
    end                           /* maybe 'FA' NUMFAT = 1 RAMdisk */
 
@@ -436,7 +464,7 @@ REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
       BUF = BUF || x2c( '83EE0B89 7C08E8B5 FF893C83 EE0BE8AD' )
       BUF = BUF || x2c( 'FFC7042D 0083EE04 8BD68B4C 028B04E8' )
       BUF = BUF || x2c( 'ADFF91E8 98FF897C 04E8A3FF E88FFF98' )
-      BUF = BUF || x2c( 'CD16CD18 CD19' )       /* FAT32: F0h 240 */
+      BUF = BUF || x2c( 'CD16CD18 CD19F4EB FD' )/* FAT32: F0h 240 */
    end                                          /* FAT1x: D4h 212 */
    else  BUF = BUF || x2c( 'CD18' )             /* tiny boot code */
 
@@ -535,7 +563,9 @@ pout     proc   near
          cbw
          int    16h             ;AH = 0 (press any key)
          int    18h             ;no boot partition
-         int    19h             ;INT 18h could IRET (joke)
+         int    19h             ;no ROM BASIC (joke)
+idle:    hlt                    ;wait for better times
+         jmp    idle
 pout     endp
 
 _TEXT    ends
@@ -616,7 +646,7 @@ MAGIC:   procedure expose SECLEN
          then  return overlay( x2c( 55AA ), BUF, 510 + 1 )
          else  return BUF
    end                           /* catch stupid errors a.s.a.p.: */
-   exit TRAP( LEN '+ 2 >' min( SECLEN, 512 ))
+   exit ERROR( LEN '+ 2 >' min( SECLEN, 512 ))
 
 /* -------------------------------------------------------------- */
 MAKEMBR: procedure expose SECLEN INT13H ACTIVE
@@ -626,7 +656,7 @@ MAKEMBR: procedure expose SECLEN INT13H ACTIVE
    S = L // SPT                  ;  C = ( L - S ) % SPT
    H = C // NOH                  ;  C = ( C - H ) % NOH
    L = ( C * NOH + H ) * SPT + S ;  S = S + 1
-   if L <> NOS then  exit TRAP( '(' || C H S || ')' L '<>' NOS )
+   if L <> NOS then  exit ERROR( '(' || C H S || ')' L '<>' NOS )
 
    L = ( C > 1023 )              /* if INT 13h extension required */
    if L  then  parse value 1023 254 63 with C H S
@@ -644,20 +674,20 @@ MAKEMBR: procedure expose SECLEN INT13H ACTIVE
    BUF =        x2c( '33C08ED0 8BE08ED8 8EC0FBFC BE007C8B' )
    BUF = BUF || x2c( 'FEB91000 F3AAC604 10C64402 06897404' )
    BUF = BUF || x2c( 'BF00EC56 57B90008 F3A5E900 705E5F8D' )
-   BUF = BUF || x2c( '9CFE018B EB813F55 AA7539B1 0483EB10' )
-   BUF = BUF || x2c( '803F80E0 F8752D66 FF770866 8F440887' )
-   BUF = BUF || x2c( 'DDB442CD 13721D81 BF009055 AA75158B' )
-   BUF = BUF || x2c( 'F5FFE70D 0A524558 58464154 20626F6F' )
-   BUF = BUF || x2c( '74203000 6633ED66 896C08C6 44020656' )
-   BUF = BUF || x2c( '53BE63EC 80F2B088 540FAC0A C07409BB' )
-   BUF = BUF || x2c( '0700B40E CD10EBF2 5B5E9899 CD163C20' )
-   BUF = BUF || x2c( '74113C61 74AB3C30 720B3C39 770734B0' )
-   BUF = BUF || x2c( '92EB9ECD 18CD19CB' )
+   BUF = BUF || x2c( '9DFE0181 3F55AABD 6BEC755D B10483EB' )
+   BUF = BUF || x2c( '10803F80 E0F8BD78 EC754E66 FF770866' )
+   BUF = BUF || x2c( '8F4408B4 42CD13BD 8CEC723D 81BDFE01' )
+   BUF = BUF || x2c( '55AABD6B EC75328B F3FFE70D 0A6D6167' )
+   BUF = BUF || x2c( '69632041 574F4C00 0D0A6E6F 20626F6F' )
+   BUF = BUF || x2c( '74207061 72746974 696F6E00 0D0A7265' )
+   BUF = BUF || x2c( '61642065 72726F72 008BF5AC 0AC07409' )
+   BUF = BUF || x2c( 'BB0700B4 0ECD10EB F298CD16 CD18CD19' )
+   BUF = BUF || x2c( 'F4EBFD' )
    select                        /* ----------------------------- */
       when  SECLEN < 128 | 256 < length( BUF ) + 72
-      then  exit TRAP( 'Unexpected sector or MBR code length' )
+      then  exit ERROR( 'Unexpected sector or MBR code length' )
       when  SECLEN = 128         /* below 512 is only theoretical */
-      then  BUF = x2c( 'CD18' )  /* if 128 use 72 + dummy INT 18h */
+      then  BUF = x2c( 'CD18' )  /* FIXME:  no boot if SECLEN 128 */
       when  substr( BUF, 50, 2 ) <> RD2C( 510, 2 )
       then  exit TRAP( 'Cannot patch MAGIC offset in MBR code' )
       when  SECLEN = 256         /* if 256 replace 01FEh by 00FEh */
@@ -708,69 +738,50 @@ mbr      proc   far             ;SS:SP unknown (0000:0400h)
 
 here:    pop    si              ;SI = offset mbr + MOVED
          pop    di              ;DI = offset mbr
-         lea    bx,[si+MAGIC]   ;patch code for sector size
-         mov    bp,bx           ;BP = offset MAGIC
+         lea    bx,[di+MAGIC]   ;BX = offset MAGIC
          cmp    word ptr [bx],0AA55h
-         jne    fail
-         mov    cl,4            ;CX = 4 partitions
+         mov    bp,offset errM + MOVED
+         jne    awol            ;missing magic in MBR
 
+         mov    cl,4            ;CX = 4 partitions
 scan:    sub    bx,16           ;BX = offset entry
          cmp    byte ptr [bx],80h
          loopne scan
-         jne    fail            ;FIXME: extended partition
+         mov    bp,offset errN + MOVED
+         jne    awol            ;no active partition
 
          push   dword ptr [bx+08]       ;LBA dword (32 bits)
          pop    dword ptr [si+08]       ;copy to LBA packet
-         xchg   bp,bx           ;BX = offset MAGIC
 
-read:    mov    ah,42h          ;DL set by BIOS or below
+         mov    ah,42h          ;DL set by BIOS
          int    13h             ;SI = offset mbr + MOVED
-         jc     fail
-         cmp    word ptr [bx-MOVED],0AA55h
-         jne    fail            ;BX = offset MAGIC
-         mov    si,bp           ;SI = offset entry (or 0)
+         mov    bp,offset errP + MOVED
+         jc     awol            ;partition read error
+         cmp    word ptr [di+MAGIC],0AA55h
+         mov    bp,offset errM + MOVED
+         jne    awol            ;missing magic in VBR
+         mov    si,bx           ;SI = offset entry
          jmp    di              ;DI = offset mbr
 
-emsg     db     0Dh,0Ah,"REXXFAT boot 0",0
-DIGIT    equ    $ - offset emsg - 2
+errM     db     0Dh,0Ah,"magic AWOL",0
+errN     db     0Dh,0Ah,"no boot partition",0
+errP     db     0Dh,0Ah,"read error",0
 
-fail:    xor    ebp,ebp         ;keep BX, SI, DI for read 0
-         mov    dword ptr [si+08],ebp   ;LBA 0 (MBR sector)
-         mov    byte ptr [si+02],6      ;max. 6 * 4096
-         push   si              ;SI = offset mbr + MOVED
-         push   bx              ;BX = offset MAGIC
-
-         mov    si,offset emsg + MOVED
-         xor    dl,10110000b    ;80..89h to 30..39h
-         mov    [si+DIGIT],dl
-next:    lodsb                  ;DS:SI message ASCIIZ
+awol:    mov    si,bp           ;error message
+etty:    lodsb                  ;DS:SI message ASCIIZ
          or     al,al           ;AL = ASCII or NUL (Z)
-         jz     keyb            ;AL = 0 terminator (Z)
+         jz     done            ;AL = 0 terminator (Z)
          mov    bx,7            ;BL = 7 white on black
          mov    ah,0Eh          ;AH = 0Eh TTY output
          int    10h             ;BH = 0 display page
-         jmp    next
+         jmp    etty
 
-keyb:    pop    bx              ;BX = offset magic
-         pop    si              ;SI = offset mbr + MOVED
-         cbw                    ;AX = 0 (byte to  word)
-         cwd                    ;DX = 0 (word to dword)
+done:    cbw                    ;AX = 0
          int    16h             ;AH = 0 (get keystroke)
-         cmp    al,20h
-         je     exit
-         cmp    al,61h
-         je     read            ;DL = 0 first floppy
-         cmp    al,30h
-         jb     boot
-         cmp    al,39h
-         jnbe   boot
-         xor    al,10110000b    ;30..39h to 80..89h
-         xchg   dx,ax           ;DL = disk number
-         jmp    read
-
-exit:    int    18h             ;found no boot partition
-boot:    int    19h
-         ret
+         int    18h             ;no boot partition
+         int    19h             ;no ROM BASIC (joke)
+idle:    hlt                    ;wait for better times
+         jmp    idle
 mbr      endp
 _TEXT    ends
          end    mbr
@@ -779,7 +790,7 @@ _TEXT    ends
 NEXTSEC: procedure expose SECLEN /* assert SECLEN + write sector  */
    parse arg VFD, BUF
    if length( BUF ) = SECLEN  then  return charout( VFD, BUF )
-   exit TRAP( length( BUF ) '<>' SECLEN )
+   exit ERROR( length( BUF ) '<>' SECLEN )
 
 /* -------------------------------------------------------------- */
 FILLSEC: procedure expose SECLEN /* fill N sectors, default NUL:  */
@@ -812,21 +823,62 @@ SPARSEC: procedure expose SECLEN /* zero fill N "sparse" sectors: */
    return
 
 /* -------------------------------------------------------------- */
-MAKEVHD: procedure expose SECLEN INT13H MINVHD
-   parse arg VFD, LEN            /* result 0: no VHD footer added */
-   if SECLEN <> 512 | LEN <= MINVHD then  return 0
+FATSIZE: procedure expose SECLEN /* convert cluster number CN to  */
+   parse arg CN, FAT, V512E      /* required FAT12/16/32 sectors: */
+   FAT = ((( CN + 2 ) * FAT + 4 ) % 8 + SECLEN - 1 ) % SECLEN
+   if V512E then  return 8 * (( FAT + 7 ) % 8 )
+            else  return FAT     /* needs multiple of 8 for V512E */
 
-   parse value NOSTRA( LEN ) with H S
-   C = LEN % ( H * S )
-   L = 2
-   do while H > 16 & L < 256
-      parse value PRIMINI( L H C ) with L H C
+/* -------------------------------------------------------------- */
+RD2C:    return reverse( d2c( arg( 1 ), arg( 2 )))
+
+/* -------------------------------------------------------------- */
+MAKEID:  procedure               /* emulate DOS idea of unique ID */
+   parse value date( 'S' ) time( 'L' )    with YYYY 5 MM 7 DD X
+   parse value translate( X, '  ', ':.' ) with HH NN SS X
+   MM = ( MM * 256 + DD ) + SS * 256 + left( X, 2 ) + arg( 1 )
+   HH = ( HH * 256 + NN ) + YYYY
+   return RD2C( HH * 65536 + MM, 4 )
+
+/* -------------------------------------------------------------- */
+NOSTRA:  procedure expose INT13H /* get H S in dummy CHS geometry */
+   if INT13H <> ''      then  return INT13H
+
+   parse arg N
+   S = min( N, 256 * 63 )        ;  ATA = ( 1024 * 256 * 63 <= N )
+
+   do T = S to 4 by -1           /* 4 or more sectors per track   */
+      if sign( N // T ) then  iterate T
+      if ATA | N % T <= 1023  then  do S = min( T, 63 ) to 4 by -1
+         if T // S = 0  then  do
+            H = T % S            /* T = H * S (heads * sectors)   */
+            if H > 256  then  iterate T
+                        else  return H S
+         end
+      end S
+      else  if ATA = 0  then  leave T
+   end T                         /* for more than 1023 cylinders: */
+   return 255 63                 /* well-known dummy (not 256 63) */
+
+/* -------------------------------------------------------------- */
+
+MAKEVHD: procedure expose SECLEN MINVHD
+   parse arg VFD, LEN            /* result 0: no VHD footer added */
+   if SECLEN <> 512 | LEN < MINVHD  then  return 0
+   C = LEN                       ;  S = 0
+
+   do H = 16 to 4 by -1          /* DISKPART.exe dislikes H < 16  */
+      if C // H <> 0 then  iterate H
+      S = C % H                  ;  C = 1
+      parse value TRIM255( S C ) with S C
+      if S < 256  then  leave H  /* using good H <= 16 & S < 256  */
+      parse value TRIM255( C S ) with S C
+      leave H
+   end H
+   if C * H * S <> LEN | C > 65535 | S > 255 then  do
+      parse value 65535 16 255 with C H S
+      call PERROR 'Please check dummy 16+4+8=28 bits VHD geometry.'
    end
-   L = 2
-   do while S * L < 256 & L <= min( 63, C )
-      parse value PRIMINI( L C S ) with L C S
-   end
-   if 65535 < C   then  parse value 65535 16 255 with C H S
 
    BUF = left( 'conectix', 8 )   /* 2 = reserved VHD feature flag */
    BUF = BUF || d2c(  2, 4 ) || d2c(  1, 2 ) /* flags 2, major 1  */
@@ -859,55 +911,19 @@ MAKEVHD: procedure expose SECLEN INT13H MINVHD
    call charout VFD, BUF         ;  return SECLEN - 1
 
 /* -------------------------------------------------------------- */
-FATSIZE: procedure expose SECLEN /* convert cluster number CN to  */
-   parse arg CN, FAT, V512E      /* required FAT12/16/32 sectors: */
-   FAT = ((( CN + 2 ) * FAT + 4 ) % 8 + SECLEN - 1 ) % SECLEN
-   if V512E then  return 8 * (( FAT + 7 ) % 8 )
-            else  return FAT     /* needs multiple of 8 for V512E */
+TRIM255: procedure               /* L * R = L' * R' with L' < 256 */
+   P = 2   3   5   7  11  13  17  19  23  29  31  37  41  43  47
+   P = P  53  59  61  67  71  73  79  83  89  97 101 103 107 109
+   P = P 113 127 131 137 139 149 151 157 163 167 173 179 181 191
+   P = P 193 197 199 211 223 227 229 233 239 241 251
 
-/* -------------------------------------------------------------- */
-RD2C:    return reverse( d2c( arg( 1 ), arg( 2 )))
-PERROR:  return sign( 1 + lineout( 'stderr', arg( 1 )))
-
-/* -------------------------------------------------------------- */
-MAKEID:  procedure               /* emulate DOS idea of unique ID */
-   parse value date( 'S' ) time( 'L' )    with YYYY 5 MM 7 DD X
-   parse value translate( X, '  ', ':.' ) with HH NN SS X
-   MM = ( MM * 256 + DD ) + SS * 256 + left( X, 2 ) + arg( 1 )
-   HH = ( HH * 256 + NN ) + YYYY
-   return RD2C( HH * 65536 + MM, 4 )
-
-/* -------------------------------------------------------------- */
-NOSTRA:  procedure expose INT13H /* get H S in dummy CHS geometry */
-   if INT13H <> ''      then  return INT13H
-
-   parse arg N
-   S = min( N, 256 * 63 )        ;  ATA = ( 1024 * 256 * 63 <= N )
-
-   do T = S to 4 by -1           /* 4 or more sectors per track   */
-      if sign( N // T ) then  iterate T
-      if ATA | N % T <= 1023  then  do S = min( T, 63 ) to 4 by -1
-         if T // S = 0  then  do
-            H = T % S            /* T = H * S (heads * sectors)   */
-            if H > 256  then  iterate T
-                        else  return H S
-         end
-      end S
-      else  if ATA = 0  then  leave T
-   end T                         /* for more than 1023 cylinders: */
-   return 255 63                 /* well-known dummy (not 256 63) */
-
-/* -------------------------------------------------------------- */
-PRIMINI: procedure               /* next prime, REXX dot is "NAN" */
-   parse arg Q L R
-   if sign( L // Q ) then  do    /* Q is no factor of L, get next */
-      P = .   2   3   5   7  11  13  17  19  23  29  31  37  41  43
-      P = P  47  53  59  61  67  71  73  79  83  89  97 101 103 107
-      P = P 109 113 127 131 137 139 149 151 157 163 167 173 179 181
-      P = P 191 193 197 199 211 223 227 229 233 239 241 251 257   .
-      return word( P, 1 + wordpos( Q, P )) L R
+   parse arg L R                 ;  Q = word( P, 1 )
+   do while L > 255 & Q <> ''
+      if sign( L // Q )
+         then  Q = word( P, 1 + wordpos( Q, P ))
+         else  parse value ( L % Q ) ( R * Q ) with L R
    end
-   return Q ( L % Q ) ( R * Q )  /* can move factor Q from L to R */
+   return L R                    /* L < 256, or no smaller factor */
 
 /* -------------------------------------------------------------- */
 VFDPATH: procedure expose SPARSE /* determine the VFD output path */
@@ -921,9 +937,6 @@ VFDPATH: procedure expose SPARSE /* determine the VFD output path */
    VFD = DIR || VFD              ;  DIR = left( DIR, 2 )
    if SEP = '/'   then  return VFD
 
-   call UTIL 'SysDriveInfo'      /* get free space on given drive */
-   call UTIL 'SysFileSystemType' /* on NTFS use FSUTIL for sparse */
-   call UTIL 'SysSearchPath'     /* use first FSUTIL.exe in PATH  */
    parse value SysDriveInfo( DIR ) with . SPARSE .
    if translate( TYPE ) <> 'VHD' then  do
       if 'NTFS' = SysFileSystemType( DIR )   then  do
@@ -935,65 +948,77 @@ VFDPATH: procedure expose SPARSE /* determine the VFD output path */
    return VFD
 
 /* -------------------------------------------------------------- */
-USAGE:   procedure expose OEMID
-   if arg( 1 ) <> '' then  say 'Error:' arg( 1 ) d2c( 7 )
-                     else  say
-   parse source . . THIS
-   say 'Usage:' THIS 'SECTORS [MINDIR [NUMFAT [SECLEN]]]'
+
+USAGE:   procedure expose OEMID USE1ST
+   parse source . . USE          ;  USE = filespec( 'name', USE )
+   say x2c( right( 7, arg()))    /* terminate line (BEL if error) */
+   if arg() then  say 'Error:' arg( 1 )
+   say 'Usage:' USE 'SECTORS [MINDIR [NUMFAT [SECLEN]]]'
    say OEMID 'for NTFS and Windows NT ooREXX.'
-   say
-   THIS  =  'The default MINDIR number is 8. '
-   say THIS 'For FAT1x there will be MINDIR or'
-   THIS  =  'more root dir. sectors (FAT32: 0). '
-   say THIS 'Default NUMFAT: 2, SECLEN: 512.'
-   say
-   THIS  =  'You can interactively pick one of'
-   say THIS 'up to eight possible cluster sizes'
-   THIS  =  'for SECTORS <' 2**32 '(2^32). '
-   say THIS 'Output:' VFDPATH( 'vfd' )
-   say
-   THIS  =  'If you want a fixed VHD disk image'
-   say THIS 'give a negative number of SECTORS.'
-   THIS  =  'The partition begins in the second'
-   say THIS 'sector directly after the MBR with'
-   THIS  =  'no gap.  VHD footer = 511 bytes. '
-   say THIS 'Output:' VFDPATH( 'vhd' )
+   if USE1ST = -1 then  return 1 /* enough in FATTEST() self-test */
+
+   say                           /* suited for REXXC tokenization */
+   say ' The default MINDIR sector number is 8.  For FAT1x there   '
+   say ' will be MINDIR or more root dir. sectors (FAT32: 0).      '
+   say ' The default NUMFAT copies number is 2 (min. 1, max. 16).  '
+   say ' The default SECLEN is 512.  SECLEN 0 yields "512e" format '
+   say ' and requires a multiple of 8 for SECTORS.  Experimentally '
+   say ' you can also try SECLEN 128, 256, 1024, 2048, or 4096.    '
+   say ' You can interactively pick one of up to eight possible    '
+   say ' cluster sizes for SECTORS <' 2**32 '(2^32).               '
+   say ' Output:' VFDPATH( 'vfd' )
+   say ' VFD: Virt. Floppy Disk (no MBR, legacy or "superfloppy"). '
+   say ' --------------------------------------------------------- '
+   say ' If you want a fixed VHD disk image give a negative number '
+   say ' of SECTORS.  The partition begins in the second sector    '
+   say ' directly after the MBR without gap.  For an uncompressed  '
+   say ' flat disk image remove the "VHD footer" (last 511 bytes). '
+   say ' Output:' VFDPATH( 'vhd' )
+   say ' VHD: Virt. Hard Disk: MBR + FAT partition + "VHD footer". '
+   say ' DSK: raw (MBR + FAT, no footer), e.g., for SECLEN <> 512. '
    return 1
 
 /* -------------------------------------------------------------- */
 FATTEST: procedure               /* self tests need admin rights  */
-   /* REXXFAT( 1, sectors, dir., FATs, size )  [expected failure] */
+   /* REXXFAT( -1, sectors, dir, FATs, size ) [expected failure] */
    TEST.1   =           4     1     1        /* minimal FAT12 VFD */
    TEST.2   =           4     1     1   512  /* SECLEN  512   VFD */
    TEST.3   =           4     1     1  8192    'SECLEN 8192'
    TEST.4   =           4     1     1    64    'SECLEN 64'
    TEST.5   =           4     1     1  4096  /* SECLEN 4096   VFD */
    TEST.6   =           4     1     1   128  /* SECLEN  128   VFD */
-   TEST.7   =           4     1     2     .    '1+2+1+1 = 5 > 4'
-   TEST.8   =           4     2     1     .    '1+1+2+1 = 5 > 4'
-   TEST.9   =           4     0     2     .    'no DIR in FAT1x'
-   TEST.10  =           4     1     0     .    'no FAT in FATFS'
-   TEST.11  =          20     2    16        /* 16 FATs supported */
-   TEST.12  =          20     1    17     .    'too many FATs'
-   TEST.13  =          24     8     1     0    '8+ 8+8+8=32 >24'
-   TEST.14  =          36     8     1     0    '36 is not n*8'
-   TEST.15  =          32     6     1     0    ' 6 is not n*8'
-   TEST.16  =          32     8     2     0    '8+16+8+8=40 >32'
-   TEST.17  =          32     8     1     0  /* minimal  512e VFD */
-   TEST.18  =       66557     0              /* RS =  7 FAT32 VFD */
-   TEST.19  =       66565     .              /* RS = 15 FAT32 VFD */
-   TEST.20  =      525240     0     .     0  /* RS =  8  512e VFD */
-   TEST.21  =      525248     .     .     0  /* RS = 16  512e VFD */
-   TEST.22  =         -17     1              /* minimal FAT12 VHD */
-   TEST.23  =         -32     8     1     0  /* minimal  512e VHD */
-   TEST.24  =       -4142    32              /*    4084 FAT12 VHD */
-   TEST.25  =       -4151    32     . '-512' /* !  4085 FAT16 bug */
-   TEST.26  =       -4152    32              /*    4086 FAT16 VHD */
+   TEST.7   =           4     1     1   128    'extraneous'
+   TEST.8   =           4     1     2     .    '1+2+1+1 = 5 > 4'
+   TEST.9   =           4     2     1     .    '1+1+2+1 = 5 > 4'
+   TEST.10  =           4     0     2     .    'no DIR in FAT1x'
+   TEST.11  =           4     1     0     .    'no FAT in FATFS'
+   TEST.12  =          20     2    16        /* 16 FATs supported */
+   TEST.13  =          20     1    17     .    'too many FATs'
+   TEST.14  =          24     8     1     0    '8+ 8+8+8=32 >24'
+   TEST.15  =          36     8     1     0    '36 is not n*8'
+   TEST.16  =          32     6     1     0    ' 6 is not n*8'
+   TEST.17  =          32     8     2     0    '8+16+8+8=40 >32'
+   TEST.18  =          32     8     1     0  /* minimal  512e VFD */
+   TEST.19  =       66557     0              /* RS =  7 FAT32 VFD */
+   TEST.20  =       66565     .              /* RS = 15 FAT32 VFD */
+   TEST.21  =      525240     0     .     0  /* RS =  8  512e VFD */
+   TEST.22  =      525248     .     .     0  /* RS = 16  512e VFD */
+   TEST.23  =         -17     1              /* minimal FAT12 VHD */
+   TEST.24  =         -32     8     1     0  /* minimal  512e VHD */
+   TEST.25  =       -4142    32              /*    4084 FAT12 VHD */
+   TEST.26  =       -4151    32     . '-512' /* !  4085 FAT16 bug */
+   TEST.27  =       -4152    32              /*    4086 FAT16 VHD */
    TEST.28  =      -66070    32              /*   65524 FAT16 VHD */
    TEST.29  =      -66565     .     . '-512' /* ! 65525 FAT32 bug */
    TEST.30  =      -66566     .              /*   65526 FAT32 VHD */
    TEST.31  =      -66558     0              /*   65526 FAT32 VHD */
-   /*          -272629756 untested, last FAT32 cluster size 1 VHD */
+   /* 130 GB:  -272629756     .     . '-512' ** ! (last CS=1) VHD */
+
+   CHKDSK.. = x2c( 0708 )        /* prompt (BEL) for caller input */
+   CHKDSK.1 = 'press ENTER for CHKDSK' VFDPATH( 'vhd' ) CHKDSK..
+   CHKDSK.2 = 'CHKDSK: expecting error, reject repairs' CHKDSK..
+   CHKDSK.3 = 'CHKDSK: attaching VHD, please wait a minute'
+   CHKDSK.4 = 'CHKDSK: detaching VHD, please wait a minute'
 
    do N = 1 while symbol( 'TEST.' || N ) = 'VAR'
       call PERROR 'test' right( N - 1, 2 ) || ': PASS'
@@ -1001,20 +1026,22 @@ FATTEST: procedure               /* self tests need admin rights  */
       parse var TEST.N NOS MINDIR NUMFAT SECLEN EXTRA
       call PERROR 'test' right( N, 2 ) || ': REXXFAT' TEST.N
       if NOS < 0  then  do
-         call PERROR 'press ENTER for CHKDSK' VFDPATH( 'vhd' )
-         pull ERR
+         call PERROR CHKDSK.1    ;  pull ERR
          if ERR <> ''   then  return PERROR( 'self tests aborted' )
       end
 
-      ERR = REXXFAT( 1, NOS, MINDIR, NUMFAT, SECLEN )
+      ERR = EXTRA
+      if ERR = 'extraneous'      /* special test: too many. arg.s */
+         then  ERR = REXXFAT( -1, NOS, MINDIR, NUMFAT, SECLEN, ERR )
+         else  ERR = REXXFAT( -1, NOS, MINDIR, NUMFAT, SECLEN )
       if ERR <> 0 then  do
          if EXTRA <> '' then  iterate N
                         else  return PERROR( 'test' N 'FAIL MIA' )
       end                        /* wanted no error, got ERR <> 0 */
       if EXTRA <> ''    then  return PERROR( 'test' N 'FAIL' EXTRA )
       if NOS < 0  then  do
-         address CMD 'chkdsk' ATTACH( NOS )
-         ERR = rc                ;  call ATTACH 0
+         if ( SECLEN = -512 ) then  call PERROR CHKDSK.2
+         ERR = FATTERR( NOS )   /* CMD requiring SIGNAL OFF ERROR */
          if ( ERR = 0 ) = ( SECLEN = -512 )  then  do
             return PERROR( 'test' N 'FAIL: CHKDSK exit code' ERR )
          end
@@ -1026,10 +1053,17 @@ FATTEST: procedure               /* self tests need admin rights  */
    return 0
 
 /* -------------------------------------------------------------- */
+FATTERR: procedure expose CHKDSK.
+   signal off error              ;  call PERROR CHKDSK.3
+   address CMD 'chkdsk' ATTACH( abs( arg( 1 )))
+   ERR = rc                      ;  call PERROR CHKDSK.4
+   call ATTACH 0                 ;  return ERR
+
+/* -------------------------------------------------------------- */
 ATTACH:  procedure               /* attach VHD file for FATTEST() */
-   parse arg NOS                 ;  NOS = abs( NOS )
-   TMP = VFDPATH( 'tmp' )        ;  call UTIL 'SysDriveMap'
-   VHD = VFDPATH( 'vhd' )        ;  call UTIL 'SysFileDelete'
+   parse arg NOS                 ;  signal off error
+   TMP = VFDPATH( 'tmp' )        ;  VHD = VFDPATH( 'vhd' )
+
    LEN = 0 || stream( VHD, 'c', 'query size' )
    OBS = LEN - 511               ;  signal off error
    if OBS // 512 = 1 then  OBS = LEN - 512
@@ -1053,74 +1087,79 @@ ATTACH:  procedure               /* attach VHD file for FATTEST() */
    if NOS = 0 | OBJ <> ''  then  return OBJ
    exit PERROR( 'cannot attach' VHD )
 
-/* -------------------------------------------------------------- */
-/* see <URL:http://purl.net/xyzzy/rexxtrap.htm>, (c) F. Ellermann */
+/* ----------------------------- (STDERR: unification 2016-03-20) */
 
-UTIL: procedure                  /* load necessary RexxUtil entry */
-   if RxFuncQuery(  arg( 1 )) then
-      if RxFuncAdd( arg( 1 ), 'RexxUtil', arg( 1 )) then
-         exit TRAP( "can't add RexxUtil"  arg( 1 ))
-   return 0
-
-TRAP:                            /* select REXX exception handler */
-   call trace 'O' ;  trace N           /* don't trace interactive */
-   parse source TRAP                   /* source on separate line */
-   TRAP = x2c( 0D ) || right( '+++', 10 ) TRAP || x2c( 0D0A )
-   TRAP = TRAP || right( '+++', 10 )   /* = standard trace prefix */
-   TRAP = TRAP strip( condition( 'c' ) 'trap:' condition( 'd' ))
+PERROR:  procedure
+   parse version SAA NUM .       ;  signal off notready
    select
-      when wordpos( condition( 'c' ), 'ERROR FAILURE' ) > 0 then do
-         if condition( 'd' ) > ''      /* need an additional line */
-            then TRAP = TRAP || x2c( 0D0A ) || right( '+++', 10 )
-         TRAP = TRAP '(RC' rc || ')'   /* any system error codes  */
-         if condition( 'c' ) = 'FAILURE' then rc = -3
-      end
-      when wordpos( condition( 'c' ), 'HALT SYNTAX'   ) > 0 then do
-         if condition( 'c' ) = 'HALT' then rc = 4
-         if condition( 'd' ) > '' & condition( 'd' ) <> rc then do
-            if condition( 'd' ) <> errortext( rc ) then do
-               TRAP = TRAP || x2c( 0D0A ) || right( '+++', 10 )
-               TRAP = TRAP errortext( rc )
-            end                        /* future condition( 'd' ) */
-         end                           /* may use errortext( rc ) */
-         else  TRAP = TRAP errortext( rc )
-         rc = -rc                      /* rc < 0: REXX error code */
-      end
-      when condition( 'c' ) = 'NOVALUE'  then rc = -2 /* dubious  */
-      when condition( 'c' ) = 'NOTREADY' then rc = -1 /* dubious  */
-      otherwise                        /* force non-zero whole rc */
-         if datatype( value( 'RC' ), 'W' ) = 0 then rc = 1
-         if rc = 0                             then rc = 1
-         if condition() = '' then TRAP = TRAP arg( 1 )
-   end                                 /* direct: TRAP( message ) */
-
-   TRAP = TRAP || x2c( 0D0A ) || format( sigl, 6 )
-   signal on syntax name TRAP.SIGL     /* throw syntax error 3... */
-   if 0 < sigl & sigl <= sourceline()  /* if no handle for source */
-      then TRAP = TRAP '*-*' strip( sourceline( sigl ))
-      else TRAP = TRAP '+++ (source line unavailable)'
-TRAP.SIGL:                             /* ...catch syntax error 3 */
-   if abbrev( right( TRAP, 2 + 6 ), x2c( 0D0A )) then do
-      TRAP = TRAP '+++ (source line unreadable)'   ;  rc = -rc
+      when  SAA = 'REXXSAA' | 6 <= NUM          /* IBM or ooRexx  */
+      then  NUM = lineout( 'STDERR:'  , arg( 1 ))
+      when  NUM = 5.00                          /* Regina (maybe) */
+      then  NUM = lineout( '<STDERR>' , arg( 1 ))
+      otherwise   NUM = 1                       /* other versions */
    end
+   if NUM   then  say arg( 1 )   ;  return 1
+
+/* ----------------------------- (Regina SysLoadFuncs 2015-12-06) */
+
+REGUTIL: procedure               /* Not needed for ooRexx > 6.03  */
+   if RxFuncQuery( 'SysLoadFuncs' ) then  do
+      ERR = RxFuncAdd( 'SysLoadFuncs', 'RexxUtil' )
+      if ERR <> 0 then  exit ERROR( 'RexxUtil load error' ERR )
+   end                           /* static Regina has no RexxUtil */
+   ERR = SysLoadFuncs()          ;  return SysUtilVersion()
+
+/* ----------------------------- (REXX ERROR template 2015-11-28) */
+/* ERROR() shows an error message and the source line number sigl */
+/* on stderr.  Examples:   if 0 = 1 then  exit ERROR( 'oops' )    */
+/*                         call ERROR 'interactive debug here'    */
+
+/* ERROR() can also catch exceptions (REXX conditions), examples: */
+/* SIGNAL ON ERROR               non-zero rc or unhandled FAILURE */
+/* SIGNAL ON NOVALUE NAME ERROR  uninitialized variable           */
+/* CALL ON NOTREADY NAME ERROR   blocked I/O (incl. EOF on input) */
+
+/* ERROR returns 1 for ordinary calls and CALL ON conditions, for */
+/* SIGNAL ON conditions ERROR exits with rc 1.                    */
+
+ERROR:
+   ERROR.3 = trace( 'o' )        /* disable any trace temporarily */
+   parse version ERROR.1 ERROR.2 ERROR.3
+   select                        /* unify stderr output kludges   */
+      when  abbrev( ERROR.1, 'REXX' ) = 0 then  ERROR.1 = ''
+      when  ERROR.1 == 'REXXSAA'          then  ERROR.1 = 'STDERR:'
+      when  ERROR.2 == 5.00               then  ERROR.1 = '<STDERR>'
+      when  6 <= ERROR.2 & ERROR.2 < 7    then  ERROR.1 = 'STDERR:'
+      otherwise                                 ERROR.1 = '/dev/con'
+   end
+   ERROR.3 = lineout( ERROR.1, '' )
+   ERROR.3 = right( sigl '*-*', 10 )
+   if sigl <= sourceline()       /* show source line if possible  */
+      then  ERROR.3 = ERROR.3 strip( sourceline( sigl ))
+      else  ERROR.3 = ERROR.3 '(source line unavailable)'
+   ERROR.3 = lineout( ERROR.1, ERROR.3 )
+   ERROR.3 = right( '+++', 10 ) condition( 'c' ) condition( 'd' )
+   if condition() = ''  then  ERROR.3 = right( '>>>', 10 ) arg( 1 )
+   ERROR.3 = lineout( ERROR.1, ERROR.3 )
    select
-      when 0 then do                   /* in pipes STDERR: output */
-         parse version TRAP.REXX       /* REXX/Personal: \dev\con */
-         if abbrev( TRAP.REXX, 'REXXSAA ' ) |                /**/ ,
-            6 <= word( TRAP.REXX, 2 )  then  TRAP.REXX = 'STDERR'
-                                       else  TRAP.REXX = '\dev\con'
-         signal on syntax name TRAP.FAIL
-         call lineout TRAP.REXX , TRAP /* fails if no more handle */
+      when  sign( wordpos( condition( 'c' ), 'ERROR FAILURE' ))
+      then  ERROR.3 = 'RC' rc
+      when  condition( 'c' ) = 'SYNTAX'
+      then  ERROR.3 = errortext( rc )
+      when  condition( 'c' ) = 'HALT'
+      then  ERROR.3 = errortext( 4 )
+      when  condition( 'c' ) = 'NOTREADY' then  do
+         ERROR.3 = condition( 'd' )
+         if ERROR.3 <> ''  then  do
+            ERROR.3 = stream( ERROR.3, 'd' )
+         end
       end
-      when 0 then do                   /* OS/2 PM or ooREXX on NT */
-         signal on syntax name TRAP.FAIL
-         call RxMessageBox translate( TRAP, ' ', x2c( 0D )), /**/ ,
-            'Trap' time(),, 'ERROR'
-      end
-      otherwise   say TRAP ; trace ?L  /* interactive Label trace */
+      otherwise   ERROR.3 = ''
    end
+   if ERROR.3 <> ''  then  do
+      ERROR.3 = lineout( ERROR.1, right( '>>>', 10 ) ERROR.3 )
+   end
+   trace ?L                      ;  ERROR:
+   if condition() <> 'SIGNAL'
+      then  return 1             ;  else  exit 1
 
-   if condition() = 'SIGNAL' then signal TRAP.EXIT
-TRAP.CALL:  return rc                  /* continue after CALL ON  */
-TRAP.FAIL:  say TRAP ;  rc = 0 - rc    /* force TRAP error output */
-TRAP.EXIT:  exit   rc                  /* exit for any SIGNAL ON  */
