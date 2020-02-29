@@ -11,6 +11,7 @@ The scripts in this repo are supposed to work in command line windows (`cmd.exe`
 2. **ff**: *FileFind*, slow as the Windows search unless directories are cached. [PC DOS 7](https://en.wikipedia.org/wiki/IBM_PC_DOS#7.00) [Norton](https://en.wikipedia.org/wiki/Norton_Utilities#Version_2.0) nostalgy.
 2. **imm** and **say**: Emulate KEDIT command `imm` or Rexx instruction `say` for one-line scripts/expressions.
 2. **md5**: [MD5](https://en.wikipedia.org/wiki/MD5) test suite 2.1 for test vectors in various IETF RFCs, replacing WayBack [2.0](https://web.archive.org/web/20120918193421/http://omniplex.om.funpic.de/src/md5.cmd), cf. [RFC 6151](https://tools.ietf.org/html/rfc6151).
+2. **rexxfat**: Create [FAT12/16/32](https://en.wikipedia.org/wiki/File_Allocation_Table#Development) superfloppy ([no MBR](https://en.wikipedia.org/wiki/Master_boot_record)) or [VHD](https://en.wikipedia.org/wiki/VHD_(file_format)) (MBR) image, supports [512e](https://en.wikipedia.org/wiki/Advanced_Format#512e).
 2. **rxclip**: Copy to or paste from the clipboard, requires *ooRexx* with *RxWinSys.dll* `WSClipBoard()`.
 2. **rxshell** and the required **-rxshell** constants: *RxShell 3.3* with a vintage 2010 [manual](https://web.archive.org/web/20130730232350/http://omniplex.om.funpic.de/src/rxshell.htm) on WayBack.
 2. **rxtime**: Measure the runtime of a specified command. 
