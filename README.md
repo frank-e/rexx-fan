@@ -14,6 +14,7 @@ The scripts in this repo are supposed to work in command line windows (`cmd.exe`
 2. **rxclip**: Copy to or paste from the clipboard, requires *ooRexx* with *RxWinSys.dll* `WSClipBoard()`.
 2. **rxshell** and the required **-rxshell** constants: *RxShell 3.3* with a vintage 2010 [manual](https://web.archive.org/web/20130730232350/http://omniplex.om.funpic.de/src/rxshell.htm) on WayBack.
 2. **rxtime**: Measure the runtime of a specified command. 
+2. **sparsify**: NTFS sparse files with `fsutil.exe` require admin rights (incl. self test).
 2. **stackget**: Emulate Quercus [REXX/Personal](http://www.edm2.com/index.php/Personal_REXX) `stackget.exe` (only *ooRexx*, not yet ready for *Regina*).
 2. **svg2tiny** and **svg2true**: Try to convert [SVG](https://commons.wikimedia.org/wiki/Help:SVG) to valid [SVG tiny or basic 1.1](https://www.w3.org/TR/2003/REC-SVGMobile-20030114/) with [rsvg-convert.exe](https://sourceforge.net/projects/tumagcc/).
 2. **utf-8**: [UTF-8](https://en.wikipedia.org/wiki/UTF-8) de-/en-coders of OEM codepages [437](https://en.wikipedia.org/wiki/Code_page_437), [819](https://en.wikipedia.org/wiki/ISO/IEC_8859-1), [858](https://web.archive.org/web/20130522131229/http://omniplex.om.funpic.de/ibm850.htm#skipxml), [878](KOI8-R), [923](https://en.wikipedia.org/wiki/ISO/IEC_8859-15), and [1252](https://web.archive.org/web/20130522131229/http://omniplex.om.funpic.de/ibm850.htm#cp1004) (incl. test suite).
