@@ -8,14 +8,14 @@ As a macro language Rexx could be compared with [Lisp](https://en.wikipedia.org/
 The scripts in this repo are supposed to work in command line windows (**cmd.exe** shells) on Windows 2000 or later with *ooRexx* or *Regina*, and as long as they do not use special features such as hardlinks they could still/also work on OS/2 or Linux. Untested, check the usual suspects such as backslashes or semicolons instead of slashes or colons on Linux.
 
 1. **cmpdel** and **cmplink**: Compare directory trees SRC and DST, **del**ete or hard**link** identical SRC files.
-2. **ff**: *FileFind*, slow as the Windows search unless directories are cached. PC DOS 7 Norton history.
+2. **ff**: *FileFind*, slow as the Windows search unless directories are cached. [PC DOS 7](https://en.wikipedia.org/wiki/IBM_PC_DOS#7.00) [Norton](https://en.wikipedia.org/wiki/Norton_Utilities#Version_2.0) nostalgy.
 2. **imm** and **say**: Emulate KEDIT command *imm* or Rexx instruction *say* for one-line scripts/expressions.
 2. **md5**: [MD5](https://en.wikipedia.org/wiki/MD5) test suite 2.1 for test vectors in various IETF RFCs, replacing WayBack [2.0](https://web.archive.org/web/20120918193421/http://omniplex.om.funpic.de/src/md5.cmd), cf. [RFC 6151](https://tools.ietf.org/html/rfc6151).
-2. **rxshell** and the required **-rxshell** constants: RxShell 3.3 with a vintage 2010 [manual](https://web.archive.org/web/20130730232350/http://omniplex.om.funpic.de/src/rxshell.htm) on WayBack.
+2. **rxshell** and the required **-rxshell** constants: *RxShell 3.3* with a vintage 2010 [manual](https://web.archive.org/web/20130730232350/http://omniplex.om.funpic.de/src/rxshell.htm) on WayBack.
 2. **rxtime**: Measure the runtime of a specified command. 
 2. **utf-8**: [UTF-8](https://en.wikipedia.org/wiki/UTF-8) de-/en-coders of OEM codepages 437, 819, 858, 878, 923, and 1252 (incl. test suite).
 2. **utf-tab**: Show magic codepoints for UTF16-BE, UTF16-LE, UTF-8, [UTF-4](https://web.archive.org/web/20110813010254/http://omniplex.om.funpic.de/home/test/utf-4.xml), and UTF-1.
 2. **which**: Oddly on Windows an ordinary **.bat** or rather **.cmd** script would be seriously tricky.
-2. **ygrep**: Only a **findstr.exe** wrapper for NT, I'm used to **fgrep** or my (lost) OS/2 *ygrep.cmd*.
+2. **ygrep**: A **findstr.exe** wrapper for NT, the author is used to *fgrep* or a (lost) OS/2 *ygrep.cmd*.
 
 The name of this repo matches [rexx-fan](https://sourceforge.net/u/rexx-fan/profile) on [SourceForge](https://en.wikipedia.org/wiki/SourceForge). For older versions of these scripts check out [WayBack 2005](https://web.archive.org/web/20050505221501/http://frank.ellermann.bei.t-online.de/sources.htm#General), [2011](https://web.archive.org/web/20110102232137/http://home.claranet.de/xyzzy/sources.htm#General), and [2013](https://web.archive.org/web/20130522122606/http://omniplex.om.funpic.de/sources.htm#General).
