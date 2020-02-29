@@ -25,3 +25,5 @@ The scripts in this repo are supposed to work in command line windows (`cmd.exe`
 2. **ygrep**: A `findstr.exe` wrapper for NT, the author is used to `fgrep` or a lost OS/2 `ygrep.cmd`.
 
 The name of this repo matches [rexx-fan](https://sourceforge.net/u/rexx-fan/profile) on [SourceForge](https://en.wikipedia.org/wiki/SourceForge). For older versions of these scripts check out [WayBack 2005](https://web.archive.org/web/20050505221501/http://frank.ellermann.bei.t-online.de/sources.htm#General), [2011](https://web.archive.org/web/20110102232137/http://home.claranet.de/xyzzy/sources.htm#General), and [2013](https://web.archive.org/web/20130522122606/http://omniplex.om.funpic.de/sources.htm#General).
+
+[regina-rexx.sourceforge.io](https://regina-rexx.sourceforge.io/images/powrexx.jpg)
