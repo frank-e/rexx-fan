@@ -14,7 +14,7 @@ The scripts in this repo are supposed to work in command line windows (**cmd.exe
 2. **rxshell** and the required **-rxshell** constants: *RxShell 3.3* with a vintage 2010 [manual](https://web.archive.org/web/20130730232350/http://omniplex.om.funpic.de/src/rxshell.htm) on WayBack.
 2. **rxtime**: Measure the runtime of a specified command. 
 2. **stackget**: Emulate Quercus [REXX/Personal](http://www.edm2.com/index.php/Personal_REXX) **stackget.exe** (only *ooRexx*, not yet ready for *Regina*).
-2. **svg2tiny** and **svg2true**: Try to convert SVG to valid [SVG tiny / basic 1.1](https://www.w3.org/TR/2003/REC-SVGMobile-20030114/) with **[rsvg-convert.exe](https://sourceforge.net/projects/tumagcc/)**.
+2. **svg2tiny** and **svg2true**: Try to convert SVG to valid [SVG tiny or basic 1.1](https://www.w3.org/TR/2003/REC-SVGMobile-20030114/) with **[rsvg-convert.exe](https://sourceforge.net/projects/tumagcc/)**.
 2. **utf-8**: [UTF-8](https://en.wikipedia.org/wiki/UTF-8) de-/en-coders of OEM codepages 437, 819, 858, 878, 923, and 1252 (incl. test suite).
 2. **utf-tab**: Show magic codepoints for UTF16-BE, UTF16-LE, UTF-8, [UTF-4](https://web.archive.org/web/20110813010254/http://omniplex.om.funpic.de/home/test/utf-4.xml), and UTF-1.
 2. **which**: Oddly on Windows an ordinary **.bat** or rather **.cmd** script would be seriously tricky.
