@@ -9,7 +9,7 @@ The scripts in this repo are supposed to work in command line windows (**cmd.exe
 
 
 1. **cmpdel** and **cmplink**: Compare directory trees SRC and DST, **del**ete or hard**link** identical SRC files.
-2. **ff**: *FileFind*, slow as the Windows search unless directories are cached. DOS 7 Norton history.
+2. **ff**: *FileFind*, slow as the Windows search unless directories are cached. PC DOS 7 Norton history.
 2. **imm** and **say**: Emulate KEDIT command *imm* or Rexx instruction *say* for one-line scripts/expressions.
 2. **md5**: [MD5](https://en.wikipedia.org/wiki/MD5) test suite 2.1 for test vectors in various IETF RFCs, replacing WayBack [2.0](https://web.archive.org/web/20120918193421/http://omniplex.om.funpic.de/src/md5.cmd), cf. [RFC 6151](https://tools.ietf.org/html/rfc6151).
 2. **rxtime**: Measure the runtime of a specified command. 
