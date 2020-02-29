@@ -1,21 +1,144 @@
 /* NT ooREXX:  Create empty VFD (virtual floppy disk) with a FAT. */
-/* Features :  Up to 2**32 - 1 sectors for FAT32.  Cluster sizes  */
-/*             with 1, 2, 4, ..., 64, 128 sectors are determined  */
-/*             and interactively picked at run time.  The default */
-/*             is the smallest possible cluster size.  A VFD is   */
-/*             created as a "sparse" NTFS file with FSUTIL.exe if */
-/*             applicable.                                        */
-/*             For FAT12 and FAT16 the minimal number of sectors  */
-/*             used as static root directory can be given.  The   */
-/*             default 6 guarantees at least 96 root entries for  */
-/*             sector size 512.                                   */
-/*             The default sector size is 512 (2**9).  VFDs can   */
-/*             be created for sector sizes from 2**7 up to 2**12. */
-/* MBR image:  A partitioned image is created when the number of  */
-/*             sectors is given as -1 -N.  This yields one MBR    */
-/*             immediately followed by N sectors for the one and  */
-/*             only partition in this image.  These N sectors are */
-/*             in essence formatted like a VFD with N sectors.    */
+/* Version  :  REXXFAT.rex 0.4, published versions older than 0.3 */
+/*             had no version number.     (Frank Ellermann, 2013) */
+
+/* History  :                                                     */
+/* 0.4      -  Intro (comment at the begin) completely rewritten. */
+/*          -  Replaced '512e' hack by SECLEN = 0 to force 512e.  */
+/*             Default FAT1x MINDIR changed from 6 to 8 sectors,  */
+/*             this removes a minor difference for 512e.          */
+/*          -  Default FAT32 RS = 7 replaced by new RS = 15.      */
+/*             Unusual FAT32 RS = 9 replaced by old RS = 7.       */
+/*          -  Removed NUMFAT < 0 hack to force unattended mode.  */
+/*             REXXFAT called by other REXX scripts or by its own */
+/*             FATTEST suite now starts in unattended mode.       */
+/* 0.3      -  Added input SECLEN '512e' to set an internal V512E */
+/*             flag, where all relevant sector numbers have to be */
+/*             multiples of 8.                                    */
+/*          -  Added unattended mode, where the smallest possible */
+/*             cluster size is automatically selected.            */
+/*          -  Added a FATTEST suite, VHD tests require Windows 7 */
+/*             DISKPART to attach and detach VHD images checked   */
+/*             with CHKDSK.                                       */
+/*          -  Added input SECLEN < 0 to allow cluster numbers    */
+/*             4085 (FAT16 4086) and 65525 (FAT32 65526) again.   */
+/*             MS CHKDSK hates this, but the MS FAT32 spec. is    */
+/*             absolutely clear that this is correct.             */
+
+/* Usage    :  REXXFAT NOS [MINDIR [NUMFAT [SECLEN]]]             */
+/* SECLEN   :  128, 256, 512, 1024, 2048, or 4096;    default 512 */
+/* NUMFAT   :  1..16 file allocation tables (FATs);   default   2 */
+/* MINDIR   :  One or more FAT12/16 dir. sectors;     default   8 */
+/* NOS      :  Number of sectors; at least four for REXXFAT 4 1 1 */
+/*             For a given total number of sectors (NOS) an image */
+/*             is formatted with NOS = RS + FN*FS + DS + CN*CS    */
+/*             sectors.  CS is the chosen cluster size 1, 2, 4,   */
+/*             etc. up to 128.  CN is the cluster number.  DS is  */
+/*             the number of FAT1x root directory sectors; or 0   */
+/*             for FAT32.  FS is the number of FAT sectors needed */
+/*             for CN+2 cluster entries.  FN is the number of FAT */
+/*             copies.  RS is the number of reserved sectors.     */
+/* FN       :  NUMFAT 1..16, more than 2 is unusual.  Four bits   */
+/*             indicate an active FAT32 if mirroring is disabled, */
+/*             and therefore REXXFAT does not support FN > 16.    */
+/* DS       :  MINDIR or more FAT12/16 dir. sectors.  Otherwise   */
+/*             unused sectors end up in DS for FAT12/16 formats.  */
+/* RS       :  Reserved sectors at the begin of a FAT disk image; */
+/*             starting with the "volume boot record" (VBR), also */
+/*             known as "partition boot record" (PBR).  A VBR/PBR */
+/*             contains "boot code" to load the next stage in the */
+/*             boot process.  For some file systems including FAT */
+/*             the VBR also contains a BPB (BIOS parameter block) */
+/*             to define file system details.  REXXFAT adds any   */
+/*             otherwise unused sectors to RS for FAT32 formats.  */
+/* CS       :  REXXFAT proposes all possible cluster sizes to get */
+/*             NOS = RS + FN*FS + DS + CN*CS.  There can be up to */
+/*             eight CS values for any given NOS and MINDIR.      */
+/*             Old tools might not support CS = 128, NOS > 65535, */
+/*             CN > 65524, or CN > 4084.                          */
+/* CN       :  FAT12     1 ..      4084, hex.    FF4, bad     FF7 */
+/*             FAT16  4085 ..     65524, hex.   FFF4, bad    FFF7 */
+/*             FAT32 65525 .. 268435444, hex FFFFFF4, bad FFFFFF7 */
+/*             FAT32 uses only 7 hex. digits for cluster numbers, */
+/*             i.e., 28 of 32 bits.  FAT12 and FAT16 use 12 or 16 */
+/*             bits, as the name suggests.                        */
+/* BigFAT   :  "BigFAT" is a name for NOS > 65535.  If 16 bits in */
+/*             an old "small" BPB value are 0 a new "big" 32 bits */
+/*             value is used.  This also affects FAT32 version 0, */
+/*             NOS has to be smaller than 4294967296 = 2**32.     */
+/* 512e     :  REXXFAT NOS MINDIR NUMFAT 0                        */
+/*             SECLEN = 0 is interpreted as a logical sector size */
+/*             512 emulation for a physical sector size 4096.  To */
+/*             avoid 512e read-modify-write accesses all relevant */
+/*             structures occupy multiples of 8 sectors.  REXXFAT */
+/*             accepts any NOS = N*8 and MINDIR = M*8.  For 512e  */
+/*             the minimal FAT cluster size CS is 8 instead of 1. */
+/* CHKDSK   :  REXXFAT NOS MINDIR NUMFAT -N                       */
+/*             SECLEN < 0 allows CN = 4085 and CN = 65525 defined */
+/*             in the "Microsoft Extensible Firmware Initiative,  */
+/*             FAT32 File System Specification"; version 1.03, as */
+/*             published 2000-12-06 and 2011-03-30.               */
+/*             FAT12 CN =  4085 is illegal, MS CHKDSK accepts it. */
+/*             FAT16 CN =  4085 is allowed, MS CHKDSK rejects it. */
+/*             FAT16 CN = 65525 is illegal, MS CHKDSK accepts it. */
+/*             FAT32 CN = 65525 is allowed, MS CHKDSK crashes.    */
+/*             In FATs the first data cluster is addressed as 2,  */
+/*             and the last of CN data clusters is addressed as   */
+/*             CN+1.                                              */
+/* Known bug:  REXXFAT NOS MINDIR -N [SECLEN]                     */
+/*             Negative values -N modify the REXXFAT processing   */
+/*             for the corresponding non-negative value.  In this */
+/*             REXXFAT version NUMFAT < 0 has no special effects. */
+/* FAT32    :  REXXFAT NOS -N [NUMFAT [SECLEN]]                   */
+/*             MINDIR < 0 works like MINDIR > 0 for FAT12 and for */
+/*             FAT16.  For FAT32 a "small" RS = 7 format is used  */
+/*             instead of the "normal" RS = 15.                   */
+/*             The minimal number of reserved sectors (RS) for a  */
+/*             FAT file system is 1.  The "typical" FAT32 RS = 32 */
+/*             for SECLEN 512 is rather "big"; it consists of one */
+/*             boot sector (0), one FSINFO sector (1), the second */
+/*             boot sector (2), three empty sectors (3..5), six   */
+/*             backup sectors (6..11, copying the original 0..5), */
+/*             and twenty additional empty sectors (12..31).      */
+/*             A minimal FAT32 can drop FSINFO, backup, and empty */
+/*             sectors arriving at RS = 1 or RS = 2 boot sectors, */
+/*             with backup = 0 and FSINFO = 0.                    */
+/*             A "small" FAT32 can drop all empty sectors, using  */
+/*             backup = 3 after the "typical" sectors 0..2 with a */
+/*             "typical" FSINFO = 1.  Three original sectors 0..2 */
+/*             are copied to 3..5 as "small" backup, and sector 6 */
+/*             is another copy of sector 0 at a well-known place. */
+/*             NB, if sector 0 is corrupted its FSINFO and backup */
+/*             pointers are unavailable, and FAT32 recovery tools */
+/*             would try backup = 6.                              */
+/*             The "normal" FAT32 format uses RS = 15, or RS = 16 */
+/*             for unpartitioned 512e VFD images.  For VHD images */
+/*             MBR + 15 is already aligned for 512e with RS = 15. */
+/*             "Normal" and "typical" are otherwise identical.    */
+/* FSUTIL   :  FSUTIL is used to create sparse VFD images on NTFS */
+/*             volumes.  Sparse fixed VHD images (VHD type 2) do  */
+/*             not work for unknown reasons.  REXXFAT uses FSUTIL */
+/*             only for VFD images on NTFS.  FSUTIL needs admin   */
+/*             rights.                                            */
+/* MBR image:  REXXFAT -N [MINDIR [NUMFAT [SECLEN]]]              */
+/*             NOS < 0 results in 0 - NOS - 1 sectors in the FAT  */
+/*             image after one master boot record (MBR) with the  */
+/*             partition table.  For a corresponding NOS - 1 VFD  */
+/*             only 3 + FN bytes differ from NOS < 0 MBR images:  */
+/*             The media descriptor in the BPP and FN FAT copies  */
+/*             is hex. F8 for MBR images, or hex. F0 for almost   */
+/*             all VFD images.  The number of hidden sectors in   */
+/*             the BPB is 0 for a VFD, for MBR images created by  */
+/*             REXXFAT it is 1.  Some tools use 63 hidden sectors */
+/*             for the first partition in MBR images with a dummy */
+/*             geometry of 63 sectors per track.  Old tools would */
+/*             allow less sectors per track.  Many tools use 2048 */
+/*             hidden sectors before the first partition.         */
+/*             The third and last BPB difference between VFD and  */
+/*             MBR images created by REXXAT is hex. 80 to address */
+/*             the first hard disk or 00 for the first floppy in  */
+/*             VBR boot code.  REXXFAT sets hex. 80 in MBR images */
+/*             or hex. 00 in unpartitioned VFDs.                  */
 /* VHD image:  For sector size 512 the result is transformed into */
 /*             a "fixed" VHD (virtual hard disk) adding 511 bytes */
 /*             for a "classic fixed VHD footer".  In theory this  */
@@ -31,115 +154,99 @@
 /*             S to specify the sector size for an image.  Do not */
 /*             touch hex. 55AA at offset 510 (REXX 510 + 1) for   */
 /*             sector sizes 2**9 .. 2**12.                        */
-/* INT 13h  :  VFD images never get a media descriptor F8 (hex.), */
-/*             VHD and raw images always get F8.  VFD images get  */
-/*             an INT 13h DL default 00 (1st floppy drive), other */
-/*             images get 80 (1st hard drive).  For F8 there will */
-/*             be only one hidden sector (MBR without gap).       */
 /* Boot code:  The MBR code is a quick hack for INT 13h with LBA, */
 /*             it starts a partition flagged as active, and exits */
 /*             with INT 18h if that fails.  The one FAT partition */
 /*             in a new VHD is not flagged as active, because the */
 /*             dummy partition boot code only displays its volume */
 /*             ID, waits for any key, and exits with INT 18h.     */
-/* 512e     :  512e emulates sector size 512 for physical sector  */
-/*             size 4096.  If the wanted sector size is given as  */
-/*             512e instead of 512 the resulting image is aligned */
-/*             for 512e, where all relevant sector numbers must   */
-/*             be multiples of 8 logical numbers.  This affects   */
-/*             allowed image sizes (total sectors), cluster sizes */
-/*             (min. 8), and FAT1x root dir. sectors (min. 8).    */
-/*             VHD images get 7 reserved sectors after the MBR.   */
-/*             VFD images get 8 reserved sectors.                 */
-/* Version  :  REXXFAT.rex 0.3, published versions older than 0.3 */
-/*             had no version number.     (Frank Ellermann, 2013) */
 
    signal on  novalue  name TRAP ;  signal on  syntax name TRAP
    signal on  failure  name TRAP ;  signal on  halt   name TRAP
    signal on notready  name TRAP ;  numeric digits 20
 
-   select
-      when  arg() <> 1           /* if called by another script:  */
-      then  parse arg NOS, MINDIR, NUMFAT, SECLEN, EXTRA
-      when  arg( 1 ) <> '*'      /* if started on command line:   */
-      then  parse arg NOS  MINDIR  NUMFAT  SECLEN  EXTRA
-      otherwise   exit FATTEST() /* self test needs admin rights  */
+   if arg() > 1         then  do /* unattended use in REXX script */
+      parse arg NOS, MINDIR, NUMFAT, SECLEN, EXTRA
+      if arg() > 4      then  EXTRA = EXTRA '...'
+      return REXXFAT( 1, NOS, MINDIR, NUMFAT, SECLEN, EXTRA )
    end
-   exit REXXFAT( NOS, MINDIR, NUMFAT, SECLEN, EXTRA )
+   else  do                      /* interactive command line use  */
+      if arg( 1 ) = '*' then  return FATTEST()
+      parse arg NOS  MINDIR  NUMFAT  SECLEN  EXTRA
+      return REXXFAT( 0, NOS, MINDIR, NUMFAT, SECLEN, EXTRA )
+   end                           /* returns 0 (okay) or 1 (error) */
 
 /* -------------------------------------------------------------- */
 REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
-   parse arg NOS, MINDIR, NUMFAT, SECLEN, EXTRA
+   parse arg USE1ST, NOS, MINDIR, NUMFAT, SECLEN, EXTRA
 
-   /* configuration values already supported by run time arg.s:   */
-   SECDEF = 512                  /* default sector length (2**9)  */
-   NUMDEF = 2                    /* default number of FAT copies  */
-   MINDEF = 6                    /* min. FAT1x default dir. sec.s */
-   MINRES = 0                    /* 7 + MINRES reserved for FAT32 */
    PARTED = 0                    /* 1: create MBR, 0: superfloppy */
-   USE1ST = 0                    /* 1: first cluster size, 0: ask */
    V512E  = 0                    /* 1: enforce 512e alignments    */
-
-   /* configuration values not yet supported by run time arg.s:   */
-   SECSUP = 2**7 2**8 2**9 2**10 2**11 2**12
-   LABEL  = 'NO NAME'            /* not yet modified at run time  */
-   INT13H = ''                   /* maybe force INT13H = NOH SPT  */
-   OEMID  = 'REXXFAT'            /* avoid OEMID "NTFS" or "EXFAT" */
-   VIRGIN = x2c( 'F6' )          /* EBCDIC 'V' for legacy FORMATs */
-   VOLSER = MAKEID( 1 )          /* raw binary volume serial id.  */
-   MINVHD = 16                   /* padding does not help for VHD */
-   MINVFD = 4096                 /* pad small VFD to MINVFD bytes */
    CHKDSK = 1                    /* 1: bypass Windows CHKDSK bug  */
    ACTIVE = 0                    /* 1: boot first VHD partition   */
-   MAJMIN = 0.3                  /* version reported by USAGE()   */
+   SECSUP = 2**7 2**8 2**9 2**10 2**11 2**12
+   LABEL  = 'NO NAME'            /* not yet modified at run time  */
+   OEMID  = 'REXXFAT 0.4'        /* avoid OEMID "NTFS" or "EXFAT" */
+   VOLSER = MAKEID( 1 )          /* raw binary volume serial id.  */
+   VIRGIN = x2c( 'F6' )          /* EBCDIC 'V' for legacy FORMATs */
+   INT13H = ''                   /* use specific NOH SPT geometry */
+   MINVHD = 16                   /* padding does not help for VHD */
+   MINVFD = 4096                 /* pad small VFD to MINVFD bytes */
+   XFAT32 = 8                    /* FAT32: 2*6+3 instead of 2*3+1 */
 
-   if NOS = '' | NOS = '/?'         then  return USAGE()
+   if NOS = '-?' | NOS = '/?'       then  return USAGE()
    if datatype( NOS, 'w' ) = 0      then  return USAGE( NOS )
    if NOS <  0    then  do       /* ToDo: improve negative "hack" */
       NOS = abs( NOS ) - 1       ;  PARTED = 1
    end
    if NOS <= 0 | 2**32 <= NOS       then  return USAGE( NOS )
-   if MINDIR = ''                   then  MINDIR = MINDEF
+
+   if abbrev( '.', MINDIR )         then  MINDIR = 8
    if datatype( MINDIR, 'w' ) = 0   then  return USAGE( MINDIR )
    if MINDIR <= 0 then  do       /* ToDo: improve negative "hack" */
-      MINDIR = abs( MINDIR )     ;  MINRES = 2
+      MINDIR = abs( MINDIR )     ;  XFAT32 = 0  /* only for FAT32 */
    end
-   if NUMFAT = ''                   then  NUMFAT = NUMDEF
+
+   if abbrev( '.', NUMFAT )         then  NUMFAT = 2
    if datatype( NUMFAT, 'w' ) = 0   then  return USAGE( NUMFAT )
    if NUMFAT <= 0 then  do       /* ToDo: improve negative "hack" */
-      NUMFAT = abs( NUMFAT )     ;  USE1ST = 1
+      NUMFAT = abs( NUMFAT )     ;  nop         /* TBD (reserved) */
    end
    if NUMFAT <= 0 | 16 < NUMFAT     then  return USAGE( NUMFAT )
-   if SECLEN = ''                   then  SECLEN = SECDEF
-   if translate( SECLEN ) = '512E'  then  do
+
+   if abbrev( '.', SECLEN )         then  SECLEN = 512
+   if SECLEN < 0  then  do       /* ToDo: improve negative "hack" */
+      SECLEN = abs( SECLEN )     ;  CHKDSK = 0
+   end
+   if SECLEN = 0  then  do       /* alignments for 512e emulation */
       SECLEN = 512               ;  V512E  = 1
-      if MINRES = 0  then  MINRES = 1 - PARTED
-                     else  MINRES = 8 - PARTED
+      if XFAT32 = 0  then  XFAT32 = 1 - PARTED  /* 1+7+0 or 0+7+1 */
+                     else  XFAT32 = 9 - PARTED  /* 1+7+8 or 0+7+9 */
       if sign(( NOS + PARTED ) // 8 ) | sign( MINDIR // 8 ) then  do
          N = '512e requires multiples of 8 sectors; got'
          return PERROR( N NOS + PARTED 'with MINDIR' MINDIR )
       end
    end
-   if SECLEN < 0  then  do       /* ToDo: improve negative "hack" */
-      SECLEN = abs( SECLEN )     ;  CHKDSK = 0
-   end
    if wordpos( SECLEN, SECSUP ) = 0 then  return USAGE( SECLEN )
    if EXTRA  <> ''                  then  return USAGE( EXTRA  )
 
    /* ----------------------------------------------------------- */
-   F. = 0                        /* F.0 = 0 fits F.1, F.2, etc.   */
-   do CLOOP = 3 * V512E to 7     /* for 512e use only 8, 16, etc. */
-      CS = 2**CLOOP              /* cluster size 1, 2, 4, .., 128 */
+   C.2 = x2d(     'FF4' )        /* max. data cluster numbers CN  */
+   C.1 = x2d(    'FFF4' )        /* addressed as 2..CN+1 in FATs, */
+   C.0 = x2d( 'FFFFFF4' )        /* clusters 0 and 1 are no data  */
 
+   F.0 = 0                       /* F.0 = 0 fits F.1, maximal F.8 */
+   do CLOOP = 3 * V512E to 7     /* 0..7 or 3..7, 8=2**3 for 512e */
+      CS = 2**CLOOP              /* cluster size 1, 2, 4, .., 128 */
       do FLOOP = 0 to 2 * sign( MINDIR )
-         select
-            when  FLOOP = 0   then  FAT = 32
-            when  FLOOP = 1   then  FAT = 16
-            when  FLOOP = 2   then  FAT = 12
-         end
-         if sign( FLOOP )     then  RAW = NOS - 1 - MINDIR
-                              else  RAW = NOS - 7 - MINRES
-         if V512E & FLOOP > 0 then  RAW = NOS - 8 - MINDIR + PARTED
+         if sign( FLOOP )     then  do
+            FAT = word( 16 12, FLOOP )
+            if V512E          then  RAW = NOS - 8 - MINDIR + PARTED
+                              else  RAW = NOS - 1 - MINDIR
+         end                     /* FAT1x: reserve 1 + MINDIR     */
+         else                       do
+            FAT = 32             ;  RAW = NOS - 7 - XFAT32
+         end                     /* FAT32: reserve 7 + XFAT32     */
          if RAW <= 0          then  iterate FLOOP
 
          CX = 0                  /* find good cluster number 2**N */
@@ -159,22 +266,23 @@ REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
             then  CN = CX
             else  FS = FATSIZE( CN, FAT, V512E )
 
-         select                  /* CN = 0 if binary search fails */
-            when  CN <= x2d(     0FF4 ) & CN > 0
-            then  if FAT <> 12   then  iterate FLOOP
-            when  CN <= x2d(    0FFF4 ) & CN > x2d(  0FF4 ) + CHKDSK
-            then  if FAT <> 16   then  iterate FLOOP
-            when  CN <= x2d( 0FFFFFF4 ) & CN > x2d( 0FFF4 ) + CHKDSK
-            then  if FAT <> 32   then  iterate FLOOP
-            when  CN  = x2d( 0FFFFFF4 ) + CHKDSK & CS = 16
-            then  if FAT <> 32   then  iterate FLOOP
-            otherwise                  iterate FLOOP
+         select                  /* special FAT32 case 0FFFFFF5h: */
+            when  CN = C.0 + 1         then  do
+               if FLOOP > 0 | CS <> 16 then  iterate FLOOP
+            end                  /* skip CN if too big for FLOOP: */
+            when  CN > C.FLOOP         then  iterate FLOOP
+            when  FLOOP < 2            then  do
+               N = FLOOP + 1     /* CN not big enough for CHKDSK: */
+               if CN <= C.N + CHKDSK   then  iterate FLOOP
+            end                  /* CN = 0 not enough for FAT12:  */
+            when  CN = 0               then  iterate FLOOP
+            otherwise   nop      /* CN > 0 suited for FAT12 FLOOP */
          end
 
          RAW = RAW - FS * NUMFAT - CS * CN
          DIR = 0                 ;  RES = 1
          select
-            when  FLOOP = 0   then  RES = RAW + MINRES + 7
+            when  FLOOP = 0   then  RES = RAW + XFAT32 + 7
             when  V512E = 0   then  DIR = RAW + MINDIR
          otherwise               /* FAT12 or FAT16 512e alignment */
             RES = 8 - PARTED     ;  DIR = RAW + MINDIR
@@ -199,7 +307,7 @@ REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
       L = L || right( RES, 4 ) '+' || right( DIR, 4 ) 'SYS;'
       L = L || right(  CS, 4 ) '*' || right( CN, 10 ) 'data:'
       say L || right(  CS * CN, 13 )
-   end
+   end N
    select
       when  PARTED = 0     then  VFD = VFDPATH( 'vfd' )
       when  MINVHD > NOS   then  VFD = VFDPATH( 'dd'  )
@@ -219,9 +327,9 @@ REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
       when  F.0 = 1  then  L = 'Pick a' L
       otherwise   L = 'Pick a..' || d2c( F.0 - 1 + c2d( 'a' )) L
    end
-   do while N = 0
+   do while N = 0                /* does nothing for USE1ST = 1   */
       say L                      ;  pull N
-      N = strip( N )             ;  if N = ''   then  exit 1
+      N = strip( N )             ;  if N = ''   then  return 1
 
       if datatype( N, 'w' )   then  do CLOOP = 1 to F.0
          if N = word( F.CLOOP, 5 )  then  do
@@ -827,17 +935,17 @@ VFDPATH: procedure expose SPARSE /* determine the VFD output path */
    return VFD
 
 /* -------------------------------------------------------------- */
-USAGE:   procedure expose MINDEF NUMDEF SECDEF MAJMIN
+USAGE:   procedure expose OEMID
    if arg( 1 ) <> '' then  say 'Error:' arg( 1 ) d2c( 7 )
                      else  say
    parse source . . THIS
    say 'Usage:' THIS 'SECTORS [MINDIR [NUMFAT [SECLEN]]]'
-   say 'Version' MAJMIN 'for NTFS and Windows NT ooREXX.'
+   say OEMID 'for NTFS and Windows NT ooREXX.'
    say
-   THIS  =  'The default MINDIR number is' MINDEF || '. '
+   THIS  =  'The default MINDIR number is 8. '
    say THIS 'For FAT1x there will be MINDIR or'
    THIS  =  'more root dir. sectors (FAT32: 0). '
-   say THIS 'Default NUMFAT:' NUMDEF || ', SECLEN:' SECDEF || '.'
+   say THIS 'Default NUMFAT: 2, SECLEN: 512.'
    say
    THIS  =  'You can interactively pick one of'
    say THIS 'up to eight possible cluster sizes'
@@ -854,7 +962,7 @@ USAGE:   procedure expose MINDEF NUMDEF SECDEF MAJMIN
 
 /* -------------------------------------------------------------- */
 FATTEST: procedure               /* self tests need admin rights  */
-   /*    REXXFAT( sectors, dir., FATs, size )  [expected failure] */
+   /* REXXFAT( 1, sectors, dir., FATs, size )  [expected failure] */
    TEST.1   =           4     1     1        /* minimal FAT12 VFD */
    TEST.2   =           4     1     1   512  /* SECLEN  512   VFD */
    TEST.3   =           4     1     1  8192    'SECLEN 8192'
@@ -867,50 +975,49 @@ FATTEST: procedure               /* self tests need admin rights  */
    TEST.10  =           4     1     0     .    'no FAT in FATFS'
    TEST.11  =          20     2    16        /* 16 FATs supported */
    TEST.12  =          20     1    17     .    'too many FATs'
-   TEST.13  =          24     8     1 '512e     8+ 8+8+8=32 >24'
-   TEST.14  =          36     8     1 '512e     36 is not n*8'
-   TEST.15  =          32     6     1 '512e      6 is not n*8'
-   TEST.16  =          32     8     2 '512e     8+16+8+8=40 >32'
-   TEST.17  =          32     8     1 '512e' /* minimal  512e VFD */
-   TEST.18  =         -17                    /* minimal FAT12 VHD */
-   TEST.19  =         -32     8     1 '512e' /* minimal  512e VHD */
-   TEST.20  =       -4126    16              /*    4084 FAT12 VHD */
-   TEST.21  =       -4135    16     . '-512' /* !  4085 FAT16 bug */
-   TEST.22  =       -4136    16              /*    4086 FAT16 VHD */
-   TEST.23  =      -66054    16              /*   65524 FAT16 VHD */
-   TEST.24  =      -66557    16     . '-512' /* ! 65525 FAT32 bug */
-   TEST.25  =      -66558    16              /*   65526 FAT32 VHD */
+   TEST.13  =          24     8     1     0    '8+ 8+8+8=32 >24'
+   TEST.14  =          36     8     1     0    '36 is not n*8'
+   TEST.15  =          32     6     1     0    ' 6 is not n*8'
+   TEST.16  =          32     8     2     0    '8+16+8+8=40 >32'
+   TEST.17  =          32     8     1     0  /* minimal  512e VFD */
+   TEST.18  =       66557     0              /* RS =  7 FAT32 VFD */
+   TEST.19  =       66565     .              /* RS = 15 FAT32 VFD */
+   TEST.20  =      525240     0     .     0  /* RS =  8  512e VFD */
+   TEST.21  =      525248     .     .     0  /* RS = 16  512e VFD */
+   TEST.22  =         -17     1              /* minimal FAT12 VHD */
+   TEST.23  =         -32     8     1     0  /* minimal  512e VHD */
+   TEST.24  =       -4142    32              /*    4084 FAT12 VHD */
+   TEST.25  =       -4151    32     . '-512' /* !  4085 FAT16 bug */
+   TEST.26  =       -4152    32              /*    4086 FAT16 VHD */
+   TEST.28  =      -66070    32              /*   65524 FAT16 VHD */
+   TEST.29  =      -66565     .     . '-512' /* ! 65525 FAT32 bug */
+   TEST.30  =      -66566     .              /*   65526 FAT32 VHD */
+   TEST.31  =      -66558     0              /*   65526 FAT32 VHD */
    /*          -272629756 untested, last FAT32 cluster size 1 VHD */
 
    do N = 1 while symbol( 'TEST.' || N ) = 'VAR'
       call PERROR 'test' right( N - 1, 2 ) || ': PASS'
       call PERROR copies( '-', 79 )
-      parse var TEST.N SEC DIR FAT LEN CHK
-      TEST.N = translate( SEC DIR FAT LEN,, '.' )
+      parse var TEST.N NOS MINDIR NUMFAT SECLEN EXTRA
       call PERROR 'test' right( N, 2 ) || ': REXXFAT' TEST.N
-      if SEC < 0  then  do
+      if NOS < 0  then  do
          call PERROR 'press ENTER for CHKDSK' VFDPATH( 'vhd' )
          pull ERR
          if ERR <> ''   then  return PERROR( 'self tests aborted' )
       end
-      if FAT = '' then  FAT = .
-      if FAT = .  then  FAT = 0 - 2    /* negative FAT number to  */
-                  else  FAT = 0 - FAT  /*  disable cluster choice */
-      if DIR = .  then  if LEN = .
-                     then  ERR = REXXFAT( SEC,    , FAT )
-                     else  return PERROR( 'test' N 'invalid' )
-                  else  if LEN = .
-                     then  ERR = REXXFAT( SEC, DIR, FAT )
-                     else  ERR = REXXFAT( SEC, DIR, FAT, LEN )
-      if ERR <> 0 then  if CHK <> ''
-                     then  iterate N
-                     else  return PERROR( 'test' N 'FAIL MIA' )
-      if CHK <> ''   then  return PERROR( 'test' N 'FAIL' CHK )
-      if SEC > 0     then  iterate N
-      address CMD 'chkdsk' ATTACH( SEC )
-      ERR = rc                   ;  call ATTACH 0
-      if ( ERR = 0 ) = ( LEN = -512 )  then  do
-         return PERROR( 'test' N 'FAIL: CHKDSK exit code' ERR )
+
+      ERR = REXXFAT( 1, NOS, MINDIR, NUMFAT, SECLEN )
+      if ERR <> 0 then  do
+         if EXTRA <> '' then  iterate N
+                        else  return PERROR( 'test' N 'FAIL MIA' )
+      end                        /* wanted no error, got ERR <> 0 */
+      if EXTRA <> ''    then  return PERROR( 'test' N 'FAIL' EXTRA )
+      if NOS < 0  then  do
+         address CMD 'chkdsk' ATTACH( NOS )
+         ERR = rc                ;  call ATTACH 0
+         if ( ERR = 0 ) = ( SECLEN = -512 )  then  do
+            return PERROR( 'test' N 'FAIL: CHKDSK exit code' ERR )
+         end
       end
    end N
    call PERROR 'test' right( N - 1, 2 ) || ': PASS'
@@ -920,20 +1027,20 @@ FATTEST: procedure               /* self tests need admin rights  */
 
 /* -------------------------------------------------------------- */
 ATTACH:  procedure               /* attach VHD file for FATTEST() */
-   parse arg SEC                 ;  SEC = abs( SEC )
+   parse arg NOS                 ;  NOS = abs( NOS )
    TMP = VFDPATH( 'tmp' )        ;  call UTIL 'SysDriveMap'
    VHD = VFDPATH( 'vhd' )        ;  call UTIL 'SysFileDelete'
    LEN = 0 || stream( VHD, 'c', 'query size' )
    OBS = LEN - 511               ;  signal off error
    if OBS // 512 = 1 then  OBS = LEN - 512
-   if OBS // 512 = 0 then  OBS = SEC <> 0 & OBS <> SEC * 512
+   if OBS // 512 = 0 then  OBS = NOS <> 0 & OBS <> NOS * 512
    if OBS <> 0 then  exit PERROR( 'missing or unexpected' VHD )
 
    call SysFileDelete TMP        ;  OBS = SysDriveMap()
    LEN = 0 || stream( TMP, 'c', 'query size' )
    if LEN <> 0 then  exit PERROR( 'cannot delete' TMP )
    call lineout TMP, 'select vdisk file="' || VHD || '"'
-   if SEC = 0  then  call lineout TMP, 'detach vdisk'
+   if NOS = 0  then  call lineout TMP, 'detach vdisk'
                else  call lineout TMP, 'attach vdisk'
    call lineout TMP, 'exit'      ;  call lineout TMP
    address CMD '@diskpart /S "' || TMP || '">NUL'
@@ -943,7 +1050,7 @@ ATTACH:  procedure               /* attach VHD file for FATTEST() */
    do while sign( wordpos( OBJ, OBS ))
       parse var MAP OBJ MAP      /* ignore race conditions, first */
    end                           /* new drive letter for test VHD */
-   if SEC = 0 | OBJ <> ''  then  return OBJ
+   if NOS = 0 | OBJ <> ''  then  return OBJ
    exit PERROR( 'cannot attach' VHD )
 
 /* -------------------------------------------------------------- */
