@@ -18,7 +18,7 @@ The scripts in this repo are supposed to work in command line windows (**cmd.exe
 2. **utf-8**: [UTF-8](https://en.wikipedia.org/wiki/UTF-8) de-/en-coders of OEM codepages [437](https://en.wikipedia.org/wiki/Code_page_437), [819](https://en.wikipedia.org/wiki/ISO/IEC_8859-1), [858](https://web.archive.org/web/20130522131229/http://omniplex.om.funpic.de/ibm850.htm#skipxml), [878](KOI8-R), [923](https://en.wikipedia.org/wiki/ISO/IEC_8859-15), and [1252](https://web.archive.org/web/20130522131229/http://omniplex.om.funpic.de/ibm850.htm#cp1004) (incl. test suite).
 2. **utf-tab**: Show magic codepoints for [UTF-16BE](https://en.wikipedia.org/wiki/UTF-16), UTF-16[LE](https://en.wikipedia.org/wiki/Endianness#Big-endian), [UTF-8](https://en.wikipedia.org/wiki/UTF-8), [UTF-4](https://web.archive.org/web/20110813010254/http://omniplex.om.funpic.de/home/test/utf-4.xml), and [UTF-1](https://en.wikipedia.org/wiki/UTF-1).
 2. **which**: Oddly on Windows an ordinary **.bat** or rather **.cmd** script would be seriously tricky.
-2. **xlat**: Convert UTF-32BE, UTF-32LE, UTF-16BE, UTF-16LE, UTF-8 to UTF-4, or convert UTF-4 to UTF-8.
+2. **xlat**: Convert [UTF-32](https://en.wikipedia.org/wiki/UTF-32), [UTF-16BE](https://en.wikipedia.org/wiki/UTF-16), or [UTF-8](https://en.wikipedia.org/wiki/UTF-8) to [UTF-4](https://web.archive.org/web/20110813010254/http://omniplex.om.funpic.de/home/test/utf-4.xml), or convert UTF-4 to UTF-8. Other UTFs rejected.
 2. **xmlceck**: Check that an XML file is well-formed, report nesting level, skip (ignore) DTD subsets. 
 2. **ygrep**: A **findstr.exe** wrapper for NT, the author is used to *fgrep* or a (lost) OS/2 *ygrep.cmd*.
 
