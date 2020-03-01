@@ -7,9 +7,10 @@ As a macro language Rexx could be compared with [Lisp](https://en.wikipedia.org/
 
 The scripts in this repo are supposed to work in command line windows (`cmd.exe` shells) on Windows 2000 or later with *[ooRexx](https://www.oorexx.org/about.html)* or *[Regina](https://sourceforge.net/projects/regina-rexx/)*, and as long as they do not use special features such as hardlinks they could still/also work on OS/2 or Linux. Please check the usual suspects such as backslashes or semicolons instead of slashes or colons on Linux.
 
-1. **cmpdel** and **cmplink**: Compare directory trees SRC and DST, **del**ete or hard**link** identical SRC files.
+1. **checkmbr**: `\\.\PHYSICALDRIVE`n, disk image ([MBR](https://en.wikipedia.org/wiki/Master_boot_record)), or unpartitioned [VBR](https://en.wikipedia.org/wiki/Volume_boot_record) floppy image.
+2. **cmpdel** and **cmplink**: Compare directory trees SRC and DST, **del**ete or hard**link** identical SRC files.
 2. **ff**: *FileFind*, slow as the Windows search unless directories are cached. [PC DOS 7](https://en.wikipedia.org/wiki/IBM_PC_DOS#7.00) [Norton](https://en.wikipedia.org/wiki/Norton_Utilities#Version_2.0) nostalgy.
-2. **imm** and **say**: Emulate KEDIT command `imm` or Rexx instruction `say` for one-line scripts/expressions.
+2. **imm** and **say**: Emulate KEDIT command `imm` or [Rexx](https://en.wikipedia.org/wiki/Rexx) `say` for one-line scripts or expressions.
 2. **md5**: [MD5](https://en.wikipedia.org/wiki/MD5) test suite 2.1 for test vectors in various IETF RFCs, replacing WayBack [2.0](https://web.archive.org/web/20120918193421/http://omniplex.om.funpic.de/src/md5.cmd), cf. [RFC 6151](https://tools.ietf.org/html/rfc6151).
 2. **rexxfat**: Create [FAT12/16/32](https://en.wikipedia.org/wiki/File_Allocation_Table#Development) superfloppy ([no MBR](https://en.wikipedia.org/wiki/Master_boot_record)) or [VHD](https://en.wikipedia.org/wiki/VHD_(file_format)) (MBR) image files, supports [512e](https://en.wikipedia.org/wiki/Advanced_Format#512e).
 2. **rxclip**: Copy to or paste from the clipboard, requires *ooRexx* with *RxWinSys.dll* `WSClipBoard()`.
