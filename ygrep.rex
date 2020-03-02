@@ -93,7 +93,11 @@ USAGE:   procedure               /* show (error +) usage message: */
    say ' to /I (case insensitive) and /R (regular expression).'
    return 1
 
-/* -------------------------------------------------------------- */
+/* ----------------------------- (rexxsort.rex WSORT, 2006-07-28) */
+/* Quick sort, partition keys P selected as the middle of 3 keys. */
+/* Only partitions with more than 3 keys are still handled in the */
+/* inmost loop, therefore the pushed bigger part consists of more */
+/* than 1 key without "L < R" tests.                              */
 
 KWIK:                            /* quick sort: call KWIK 'stem.' */
    if arg() <> 1 then return abs( /* REXX error 40 */ )
