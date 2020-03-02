@@ -13,9 +13,9 @@ The scripts in this repo are supposed to work in command line windows (`cmd.exe`
 2. **imm** and **say**: Emulate KEDIT command `imm` or [Rexx][R] `say` for one-line scripts or expressions.
 2. **md5**: [MD5](https://en.wikipedia.org/wiki/MD5) test suite 2.1 for test vectors in various IETF RFCs, replacing WayBack [2.0][5], cf. [RFC 6151](https://tools.ietf.org/html/rfc6151).
 2. **rexxfat**: Create [FAT12/16/32](https://en.wikipedia.org/wiki/File_Allocation_Table#Development) superfloppy ([no MBR][M])) or [VHD][V] (MBR) image files, supports [512e](https://en.wikipedia.org/wiki/Advanced_Format#512e).
-2. **rexxsort**: See [manual][3] on WayBack. The `KWIK` in [ygrep.rex](../master/ygrep.rex) etc. is a copy of the *treble QSort* here.
+2. **rexxsort**: See [manual][3] on *xyzzy*. The `KWIK` in [ygrep.rex](../master/ygrep.rex) etc. is a copy of the *treble QSort* here.
 2. **rxclip**: Copy to or paste from the clipboard, requires *ooRexx* with *RxWinSys.dll* `WSClipBoard()`.
-2. **rxshell** and the required **-rxshell** constants: *RxShell 3.3* with a vintage 2010 [manual][6] on WayBack.
+2. **rxshell** and the required **-rxshell** constants: *RxShell 3.3* with a vintage 2010 [manual][6] on *xyzzy*.
 2. **rxtime**: Measure the runtime of a specified command. 
 2. **sparsify**: NTFS sparse files with `fsutil.exe` require admin rights (incl. self test).
 2. **stackget**: Emulate Quercus [REXX/Personal](http://www.edm2.com/index.php/Personal_REXX) `stackget.exe` (only *ooRexx*, not yet ready for *Regina*).
@@ -29,7 +29,7 @@ The scripts in this repo are supposed to work in command line windows (`cmd.exe`
 2. **xmlcheck**: Check that an XML file is well-formed, report nesting level, ignore DTD subset details. 
 2. **ygrep**: A `findstr.exe` wrapper for NT, the author is used to `fgrep` or an old OS/2 `ygrep.cmd`.
 
-The name of this repo matches [rexx-fan](https://sourceforge.net/u/rexx-fan/profile) on [SourceForge](https://en.wikipedia.org/wiki/SourceForge). For older versions of these scripts try [WayBack 2005][0], [2011][1], or [2013][2].
+The name of this repo matches [rexx-fan](https://sourceforge.net/u/rexx-fan/profile) on [SourceForge](https://en.wikipedia.org/wiki/SourceForge). For older versions of these scripts try *xyzzy* [2005][0], [2011][1], or [2013][2].
 
 [M]: https://en.wikipedia.org/wiki/Master_boot_record (Master Boot Record)
 [B]: https://en.wikipedia.org/wiki/UTF-16
