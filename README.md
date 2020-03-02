@@ -29,7 +29,7 @@ The scripts in this repo are supposed to work in command line windows (`cmd.exe`
 2. **xmlcheck**: Check that an XML file is well-formed, report nesting level, ignore DTD subset details. 
 2. **ygrep**: A `findstr.exe` wrapper for NT, the author is used to `fgrep` or an old OS/2 `ygrep.cmd`.
 
-The name of this repo matches [rexx-fan](https://sourceforge.net/u/rexx-fan/profile) on [SourceForge](https://en.wikipedia.org/wiki/SourceForge). For older versions of these programs try *xyzzy* [2005][0], [2011][1], or [2013][2].
+The name of this repo matches [rexx-fan](https://sourceforge.net/u/rexx-fan/profile) on [SF](https://en.wikipedia.org/wiki/SourceForge "SourceForge"). For older versions of these programs try *xyzzy* [2005][0], [2011][1], or [2013][2].
 
 [M]: https://en.wikipedia.org/wiki/Master_boot_record (Master Boot Record)
 [B]: https://en.wikipedia.org/wiki/UTF-16
