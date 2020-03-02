@@ -13,6 +13,7 @@ The scripts in this repo are supposed to work in command line windows (`cmd.exe`
 2. **imm** and **say**: Emulate KEDIT command `imm` or [Rexx](https://en.wikipedia.org/wiki/Rexx) `say` for one-line scripts or expressions.
 2. **md5**: [MD5](https://en.wikipedia.org/wiki/MD5) test suite 2.1 for test vectors in various IETF RFCs, replacing WayBack [2.0](https://web.archive.org/web/20120918193421/http://omniplex.om.funpic.de/src/md5.cmd), cf. [RFC 6151](https://tools.ietf.org/html/rfc6151).
 2. **rexxfat**: Create [FAT12/16/32](https://en.wikipedia.org/wiki/File_Allocation_Table#Development) superfloppy ([no MBR](https://en.wikipedia.org/wiki/Master_boot_record)) or [VHD](https://en.wikipedia.org/wiki/VHD_(file_format)) (MBR) image files, supports [512e](https://en.wikipedia.org/wiki/Advanced_Format#512e).
+2. **rexxsort**: cf. [manual](https://web.archive.org/web/20110813004357/http://omniplex.om.funpic.de/rexxsort.htm) on WayBack. The `KWIK` in `ygrep.rex` etc. is a copy of the *treble QSort* here.
 2. **rxclip**: Copy to or paste from the clipboard, requires *ooRexx* with *RxWinSys.dll* `WSClipBoard()`.
 2. **rxshell** and the required **-rxshell** constants: *RxShell 3.3* with a vintage 2010 [manual](https://web.archive.org/web/20130730232350/http://omniplex.om.funpic.de/src/rxshell.htm) on WayBack.
 2. **rxtime**: Measure the runtime of a specified command. 
