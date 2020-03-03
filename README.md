@@ -7,7 +7,7 @@ As a macro language Rexx could be compared with [Lisp](https://en.wikipedia.org/
 
 The programs in this repo are supposed to work in command line windows (`cmd.exe` shells) on Windows 2000 or later with *[ooRexx](https://www.oorexx.org/about.html)* or *[Regina](https://sourceforge.net/projects/regina-rexx/)*, and as long as they do not use special features such as hardlinks they could still/also work on OS/2 or Linux. Please check the usual suspects such as backslashes or semicolons instead of slashes or colons on Linux.
 
-1. **7b**: binary to or from 7b-format (7-bit), codec and specification, claiming to *better* than B64, for giggles.
+1. **7b**: binary to 7b-format (7-bit) codec and spec., claiming to *better* than B64, for giggles.
 2. **checkmbr**: `\\.\PHYSICALDRIVE`n, disk image ([MBR][M]), or unpartitioned [VBR](https://en.wikipedia.org/wiki/Volume_boot_record) floppy image.
 2. **cmpdel** and **cmplink**: Compare directory trees SRC and DST, **del**ete or hard**link** identical SRC files.
 2. **ff**: *FileFind*, slow as the Windows search unless directories are cached. [PC DOS 7](https://en.wikipedia.org/wiki/IBM_PC_DOS#7.00) [Norton](https://en.wikipedia.org/wiki/Norton_Utilities#Version_2.0) nostalgy.
