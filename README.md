@@ -12,7 +12,7 @@ The programs in this repo are supposed to work in command line windows (`cmd.exe
 2. **[cmpdel](https://github.com/frank-e/rexx-fan/blob/master/cmpdel.rex "cmpdel.rex")** and **[cmplink](https://github.com/frank-e/rexx-fan/blob/master/cmplink.rex "cmplink.rex")**: Compare directory trees SRC and DST, **del**ete or hard**link** identical SRC files.
 2. **[ff](https://github.com/frank-e/rexx-fan/blob/master/ff.rex "ff.rex")**: *FileFind*, slow as the Windows search unless directories are cached. [PC DOS 7](https://en.wikipedia.org/wiki/IBM_PC_DOS#7.00) [Norton](https://en.wikipedia.org/wiki/Norton_Utilities#Version_2.0) nostalgy.
 2. **[imm](https://github.com/frank-e/rexx-fan/blob/master/imm.rex "imm.rex")** and **[say](https://github.com/frank-e/rexx-fan/blob/master/say.rex "say.rex")**: Emulate KEDIT command `imm` or [Rexx][R] `say` for one-line scripts or expressions.
-2. **[md5](https://github.com/frank-e/rexx-fan/blob/master/md5.rex "md5.rex")**: [MD5](https://en.wikipedia.org/wiki/MD5) test suite 2.1 for test vectors in various IETF RFCs, replacing WayBack [2.0][5], cf. [RFC 6151](https://tools.ietf.org/html/rfc6151).
+2. **[md5](https://github.com/frank-e/rexx-fan/blob/master/md5.rex "md5.rex")**: [MD5](https://en.wikipedia.org/wiki/MD5) test suite 2.1 for test vectors in various IETF RFCs, replacing *xyzzy* [2.0][5], cf. [RFC 6151](https://tools.ietf.org/html/rfc6151).
 2. **[rexxfat](https://github.com/frank-e/rexx-fan/blob/master/rexxfat.rex "rexxfat.rex")**: Create [FAT12/16/32](https://en.wikipedia.org/wiki/File_Allocation_Table#Development) superfloppy ([no MBR][M])) or [VHD][V] (MBR) image files, supports [512e](https://en.wikipedia.org/wiki/Advanced_Format#512e).
 2. **[rexxsort](https://github.com/frank-e/rexx-fan/blob/master/rexxsort.rex "rexxsort.rex")**: See [manual][3] on *xyzzy*. The `KWIK` in [ygrep.rex](../master/ygrep.rex) etc. is a copy of the *treble QSort* here.
 2. **[rxclip](https://github.com/frank-e/rexx-fan/blob/master/rxclip.rex "rxclip.rex")**: Copy to or paste from the clipboard, requires *ooRexx* with *RxWinSys.dll* `WSClipBoard()`.
@@ -39,10 +39,10 @@ The name of this repo matches [rexx-fan](https://sourceforge.net/u/rexx-fan/prof
 [V]: https://en.wikipedia.org/wiki/VHD_(file_format) (Virtual Hard Disk)
 [0]: https://web.archive.org/web/20050505221501/http://frank.ellermann.bei.t-online.de/sources.htm#General (purl.net/xyzzy/sources.htm)
 [1]: https://web.archive.org/web/20110102232137/http://home.claranet.de/xyzzy/sources.htm#General (purl.net/xyzzy/sources.htm)
-[2]: https://purl.net/xyzzy/sources.htm#General
-[3]: https://purl.net/xyzzy/rexxsort.htm
-[4]: https://purl.net/xyzzy/home/test/utf-4.xml
-[5]: https://purl.net/xyzzy/src/md5.cmd
-[6]: https://purl.net/xyzzy/src/rxshell.htm
+[2]: https://purl.net/xyzzy/sources.htm#General (purl.net/xyzzy/sources)
+[3]: https://purl.net/xyzzy/rexxsort.htm (purl.net/xyzzy/rexxsort)
+[4]: https://purl.net/xyzzy/home/test/utf-4.xml (purl.net/xyzzy/home/test/utf-4)
+[5]: https://purl.net/xyzzy/src/md5.cmd (purl.net/xyzzy/src/md5)
+[6]: https://purl.net/xyzzy/src/rxshell.htm (purl.net/xyzzy/src/rxshell)
 [8]: https://purl.net/xyzzy/ibm850.htm#skipxml (PC-Multilingual-850+euro)
 [9]: https://purl.net/xyzzy/ibm850.htm#cp1004 (windows-1252)
