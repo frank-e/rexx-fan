@@ -23,7 +23,7 @@ The programs in this repo are supposed to work in command line windows (`cmd.exe
 2. **[svg2tiny](https://github.com/frank-e/rexx-fan/blob/master/svg2tiny.rex "svg2tiny.rex")** and **[svg2true](https://github.com/frank-e/rexx-fan/blob/master/svg2true.rex "svg2true.rex")**: Try to convert [SVG](https://commons.wikimedia.org/wiki/Help:SVG) to valid [SVG tiny or basic 1.1](https://www.w3.org/TR/2003/REC-SVGMobile-20030114/) with [rsvg-convert.exe](https://sourceforge.net/projects/tumagcc/).
 2. **[today](https://github.com/frank-e/rexx-fan/blob/master/today.rex "today.rex")**: List all files changed today `1 *`, *tomorrow* `0 *`, new videos this week `7 *.webm`, etc.
 2. **[utf-8](https://github.com/frank-e/rexx-fan/blob/master/utf-8.rex "utf-8.rex")**: [UTF-8][U] de-/en-coders of OEM codepages [437](https://en.wikipedia.org/wiki/Code_page_437 "DOS US"), [819](https://en.wikipedia.org/wiki/ISO/IEC_8859-1 "Latin-1"), [858][8], [878](https://en.wikipedia.org/wiki/KOI8-R "KOI8-R"), [923](https://en.wikipedia.org/wiki/ISO/IEC_8859-15 "Latin-9"), and [1252][9] (incl. test suite).
-2. **[utf-tab](https://github.com/frank-e/rexx-fan/blob/master/utf-tab.rex "utf-tab.rex")**: Show magic codepoints for [UTF-16BE][B], UTF-16[LE](https://en.wikipedia.org/wiki/Endianness#Big-endian), [UTF-8][U], [UTF-4][4], and [UTF-1](https://en.wikipedia.org/wiki/UTF-1).
+2. **[utf-tab](https://github.com/frank-e/rexx-fan/blob/master/utf-tab.rex "utf-tab.rex")**: Show magic codepoints for [UTF-16BE][B], UTF-16[LE](https://en.wikipedia.org/wiki/Endianness#Big-endian "Little Endian"), [UTF-8][U], [UTF-4][4], and [UTF-1](https://en.wikipedia.org/wiki/UTF-1 "Unicode Transformation Format modulo 256-66=190, preserving 66 control char.s").
 2. **[VHDclone](https://github.com/frank-e/rexx-fan/blob/master/VHDclone.rex "VHDclone.rex")**: Copy static [VHD][V] with new UUID, timestamp, and creator, faster than `diskpart.exe`.
 2. **[which](https://github.com/frank-e/rexx-fan/blob/master/which.rex "which.rex")**: Oddly on Windows an ordinary **.bat** or rather **.cmd** script would be seriously tricky.
 2. **[xlat](https://github.com/frank-e/rexx-fan/blob/master/xlat.rex "xlat.rex")**: Convert [UTF-32](https://en.wikipedia.org/wiki/UTF-32), [UTF-16][B], or [UTF-8][U] to [UTF-4][4], or convert UTF-4 to UTF-8. Other UTFs rejected.
@@ -33,15 +33,15 @@ The programs in this repo are supposed to work in command line windows (`cmd.exe
 The name of this repo matches [rexx-fan](https://sourceforge.net/u/rexx-fan/profile) on [SF](https://en.wikipedia.org/wiki/SourceForge "SourceForge"). For older versions of these programs try *xyzzy* [2005][0], [2011][1], or [2013][2].
 
 [M]: https://en.wikipedia.org/wiki/Master_boot_record (Master Boot Record)
-[B]: https://en.wikipedia.org/wiki/UTF-16
-[R]: https://en.wikipedia.org/wiki/Rexx
-[U]: https://en.wikipedia.org/wiki/UTF-8
+[B]: https://en.wikipedia.org/wiki/UTF-16 (Unicode Transformation Format in 16 bits)
+[R]: https://en.wikipedia.org/wiki/Rexx (classic Rexx)
+[U]: https://en.wikipedia.org/wiki/UTF-8 (Unicode Transformation Format in 8 bits)
 [V]: https://en.wikipedia.org/wiki/VHD_(file_format) (Virtual Hard Disk)
 [0]: https://web.archive.org/web/20050505221501/http://frank.ellermann.bei.t-online.de/sources.htm#General (purl.net/xyzzy/sources.htm)
 [1]: https://web.archive.org/web/20110102232137/http://home.claranet.de/xyzzy/sources.htm#General (purl.net/xyzzy/sources.htm)
 [2]: https://purl.net/xyzzy/sources.htm#General (purl.net/xyzzy/sources)
 [3]: https://purl.net/xyzzy/rexxsort.htm (purl.net/xyzzy/rexxsort)
-[4]: https://purl.net/xyzzy/home/test/utf-4.xml (purl.net/xyzzy/home/test/utf-4)
+[4]: https://purl.net/xyzzy/home/test/utf-4.xml (Unicode Transformation Format in 4 bits, Latin-1 friendly)
 [5]: https://purl.net/xyzzy/src/md5.cmd (purl.net/xyzzy/src/md5)
 [6]: https://purl.net/xyzzy/src/rxshell.htm (purl.net/xyzzy/src/rxshell)
 [8]: https://purl.net/xyzzy/ibm850.htm#skipxml (PC-Multilingual-850+euro)
