@@ -8,6 +8,7 @@ As a macro language Rexx could be compared with [Lisp](https://en.wikipedia.org/
 The programs in this repo are supposed to work in command line windows (`cmd.exe` shells) on Windows 2000 or later with *[ooRexx](https://www.oorexx.org/about.html)* or *[Regina](https://sourceforge.net/projects/regina-rexx/)*, and as long as they do not use special features such as hardlinks they could still/also work on OS/2 or Linux. Please check the usual suspects such as backslashes or semicolons instead of slashes or colons on Linux.
 
 1. **[7b](https://github.com/frank-e/rexx-fan/blob/master/7b.rex "7b.rex")**: binary to 7b-format (7-bit) codec + spec., claiming to be *better* than B64, for giggles.
+1. **[adhrs](https://github.com/frank-e/rexx-fan/blob/master/adhrs.rex "adhrs.rex")**: Count unusual `ADHRS` attribute combos for directories.
 2. **[checkmbr](https://github.com/frank-e/rexx-fan/blob/master/checkmbr.rex "checkmbr.rex")**: `\\.\PHYSICALDRIVE`n, disk image ([MBR][M]), or unpartitioned [VBR](https://en.wikipedia.org/wiki/Volume_boot_record) floppy image.
 2. **[cmpdel](https://github.com/frank-e/rexx-fan/blob/master/cmpdel.rex "cmpdel.rex")** and **[cmplink](https://github.com/frank-e/rexx-fan/blob/master/cmplink.rex "cmplink.rex")**: Compare directory trees SRC and DST, **del**ete or hard**link** identical SRC files.
 2. **[countext](https://github.com/frank-e/rexx-fan/blob/master/countext.rex "countext.rex")**: Count used file **ext**ensions in a given sub-directory tree.
