@@ -19,6 +19,7 @@ The programs in this repo are supposed to work in command line windows (`cmd.exe
 2. **[rexxfat](https://github.com/frank-e/rexx-fan/blob/master/rexxfat.rex "rexxfat.rex")**: Create [FAT12/16/32](https://en.wikipedia.org/wiki/File_Allocation_Table#Development) superfloppy ([no MBR][M])) or [VHD][V] (MBR) image files, supports [512e](https://en.wikipedia.org/wiki/Advanced_Format#512e).
 2. **[rexxsort](https://github.com/frank-e/rexx-fan/blob/master/rexxsort.rex "rexxsort.rex")**: See [manual][3] on *xyzzy*. The `KWIK` in [ygrep.rex](../master/ygrep.rex) etc. is a copy of the *treble QSort* here.
 2. **[rxclip](https://github.com/frank-e/rexx-fan/blob/master/rxclip.rex "rxclip.rex")**: Copy to or paste from the clipboard, requires *ooRexx* with *RxWinSys.dll* `WSClipBoard()`.
+2. **[rxpause](https://github.com/frank-e/rexx-fan/blob/master/rxpause.rex "rxpause.rex")**: Inspired by NT `timeout.exe` + ooRexx `rexxpaws.exe`.
 2. **[rxshell](https://github.com/frank-e/rexx-fan/blob/master/rxshell.rex "rxshell.rex")** and the required **[-rxshell](https://github.com/frank-e/rexx-fan/blob/master/-rxshell.rex "-rxshell.rex")** constants: *RxShell 3.3* with a vintage 2010 [manual][6] on *xyzzy*.
 2. **[rxtime](https://github.com/frank-e/rexx-fan/blob/master/rxtime.rex "rxtime.rex")**: Measure the runtime of a specified command.
 2. **[sparsify](https://github.com/frank-e/rexx-fan/blob/master/sparsify.rex "sparsify.rex")**: NTFS sparse files with `fsutil.exe` require admin rights (incl. self test).
