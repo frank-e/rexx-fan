@@ -1,5 +1,6 @@
-/* Classic REXX 5.00 (Regina) or 6.03+ (ooRexx) with RexxUtil     */
+/* Classic REXX 5.00 (Regina) or 6.03+ (ooRexx) without RexxUtil: */
 /* rsvg-convert SVG to SVG basic 1.1 (or SVG tiny 1.1)            */
+/* Porting: Fix three lines "call SYSTEM ..." for your OS + shell */
 
    signal on novalue  name ERROR ;  parse version UTIL REXX .
    if ( 0 <> x2c( 30 )) | ( REXX <> 5 & REXX < 6.03 )
@@ -8,7 +9,7 @@
    if 5 <= REXX   then  interpret  'signal on lostdigits name ERROR'
    signal on halt     name ERROR ;  signal on failure    name ERROR
    signal on notready name ERROR ;  signal on error      name ERROR
-   numeric digits 20             ;  UTIL = REGUTIL()
+   numeric digits 20
 
 /* -------------------------------------------------------------- */
 
@@ -26,13 +27,13 @@
    if BASIC then  DST = left( SRC, TMP ) || 'true.tmp'
             else  DST = left( SRC, TMP ) || 'tiny.tmp'
    TMP = '@rsvg-convert -f svg -o "' || DST || '" "' || SRC || '"'
-   address CMD TMP               ;  if rc <> 0  then  exit rc
+   call SYSTEM TMP               ;  if rc <> 0  then  exit rc
    TMP = DST
    DST = left( DST, length( DST ) - 3 ) || 'svg'
    if DST = SRC                           then  exit USAGE( SRC )
    SRC = TMP
    TMP = '@if exist "' || DST || '" del "' || DST || '"'
-   address CMD TMP               ;  if rc <> 0  then  exit rc
+   call SYSTEM TMP               ;  if rc <> 0  then  exit rc
 
    TMP = '<?xml version="1.0" encoding="UTF-8" ?><!DOCTYPE svg'
    TMP = TMP 'PUBLIC "-//W3C//DTD SVG 1.1'
@@ -48,7 +49,7 @@
       if N > 2 then  call lineout DST, STYLE( TMP, BASIC )
    end
    call lineout SRC              ;  call lineout DST
-   address CMD '@del "' || SRC || '"'
+   call SYSTEM '@del "' || SRC || '"'
    exit rc
 
 /* -------------------------------------------------------------- */
@@ -91,14 +92,27 @@ USAGE:   procedure               /* show (error +) usage message: */
    say ' be rendered as garbage.  Try SVG 1.1 basic if TINY fails. '
    return 1                      /* exit code 1, nothing happened */
 
-/* ----------------------------- (Regina SysLoadFuncs 2015-12-06) */
+/* ----------------------------- (wrap address SYSTEM 2020-03-17) */
+/* Regina uses an intuitive address SYSTEM for internal commands, */
+/* redirections, and pipes.  Regina uses address CMD for external */
+/* commands, roughly that is an address SYSTEM 'start ... /WAIT'. */
+/* An ooRexx address CMD corresponds to Regina address SYSTEM, on */
+/* Windows ooRexx RexxUtil has RxWinExec() for external commands. */
 
-REGUTIL: procedure               /* Not needed for ooRexx > 6.03  */
-   if RxFuncQuery( 'SysLoadFuncs' ) then  do
-      ERR = RxFuncAdd( 'SysLoadFuncs', 'RexxUtil' )
-      if ERR <> 0 then  exit ERROR( 'RexxUtil load error' ERR )
-   end                           /* static Regina has no RexxUtil */
-   ERR = SysLoadFuncs()          ;  return SysUtilVersion()
+SYSTEM:  procedure expose rc
+   parse version S V .           ;  call on FAILURE   name ERROR
+   if ( V == 5.00 ) | ( 6 <= V & V < 7 )  then  do
+      if V = 5 then  address SYSTEM arg( 1 )          /* Regina   */
+               else  address CMD    arg( 1 )          /* (o)oRexx */
+      return .RS < 0                                  /* 1: fail  */
+   end
+   if S = 'REXXSAA'  then  do    /* --- FIXME (untested code) --- */
+      parse upper source V .     /* OS/2, PC DOS 7, maybe Quercus */
+      if wordpos( 'DOS', V ) > 0 then  address COMMAND   arg( 1 )
+                                 else  address CMD       arg( 1 )
+      return rc < 0                                   /* 1: fail  */
+   end                           /* Kedit KEXX 5.xy not supported */
+   exit ERROR( 'Please edit procedure SYSTEM() for' S V )
 
 /* ----------------------------- (STDERR: unification 2020-03-14) */
 /* PERROR() emulates lineout( 'STDERR:', emsg ) with ERROUT().    */
