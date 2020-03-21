@@ -37,6 +37,9 @@ The programs in this repo are supposed to work in command line windows (`cmd.exe
 
 The name of this repo matches [rexx-fan](https://sourceforge.net/u/rexx-fan/profile) on [SF](https://en.wikipedia.org/wiki/SourceForge "SourceForge"). For older versions of these programs try *xyzzy* [2005][0], [2011][1], or [2013][2].
 
+== Version 0.0 ==
+*Download [v0.0.zip](https://github.com/frank-e/KEXX/archive/v0.0.zip "2020-03-21") or [tarball](https://github.com/frank-e/KEXX/archive/v0.0.tar.gz "2020-03-21")*
+
 [M]: https://en.wikipedia.org/wiki/Master_boot_record (Master Boot Record)
 [B]: https://en.wikipedia.org/wiki/UTF-16 (Unicode Transformation Format in 16 bits)
 [R]: https://en.wikipedia.org/wiki/Rexx (classic Rexx)
