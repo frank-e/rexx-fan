@@ -20,7 +20,7 @@
 
    do N = 0 to 7
       A.. = translate( A.N, '*++++', '?DHRS' )
-      X = SysFileTree( 'C:\*', 'D', 'DOS', A.. )
+      X = SysFileTree( 'C:\*', 'D.', 'DOS', A.. )
       if X <> 0   then  exit ERROR( 'SysFileTree failure' X )
       say A.N 'directories' D.0
    end N
@@ -48,7 +48,7 @@ REGUTIL: procedure               /* Not needed for ooRexx > 6.03  */
    end                           /* static Regina has no RexxUtil */
    ERR = SysLoadFuncs()          ;  return SysUtilVersion()
 
-/* ----------------------------- (STDERR: unification 2020-03-09) */
+/* ----------------------------- (STDERR: unification 2020-03-14) */
 /* PERROR() emulates lineout( 'STDERR:', emsg ) with ERROUT().    */
 /* ERROUT() emulates charout( 'STDERR:', emsg ).                  */
 
@@ -62,8 +62,8 @@ REGUTIL: procedure               /* Not needed for ooRexx > 6.03  */
 /* CALL ON NOTREADY NAME ERROR   blocked I/O (incl. EOF on input) */
 
 /* ERROR() uses ERROR. in the context of its caller and returns 1 */
-/* for explicit calls or CALL ON conditions.  For a SIGNAL ERROR  */
-/* ERROR() terminates the running program with exit 1.            */
+/* for explicit calls or CALL ON conditions.  For a SIGNAL ON ... */
+/* condition ERROR() ends with exit 1.                            */
 
 PERROR:  return sign( ERROUT( arg( 1 ) || x2c( 0D0A )))
 ERROUT:  procedure
@@ -72,13 +72,13 @@ ERROUT:  procedure
       when  6 <= V & V < 7 then  S = 'STDERR:'        /* (o)oRexx */
       when  S == 'REXXSAA' then  S = 'STDERR:'        /* IBM Rexx */
       when  V == 5.00      then  S = '<STDERR>'       /* Regina   */
-      otherwise                  S = '/dev/con'
-   end
+      otherwise                  S = '/dev/con'       /* Quercus  */
+   end                           /* Kedit KEXX 5.xy not supported */
    return charout( S, arg( 1 ))
 
-ERROR:
-   ERROR.1 = value( 'result' )   ;  call trace 'o'
-   ERROR.2 = sigl                ;  call PERROR ''
+ERROR:                           /* trace off, save result + sigl */
+   ERROR.3 = trace( 'o' )        ;  ERROR.1 = value( 'result' )
+   ERROR.2 = sigl                ;  call PERROR
    ERROR.3 = right( ERROR.2 '*-*', 10 )
    if ERROR.2 <= sourceline()
       then  call PERROR ERROR.3 strip( sourceline( ERROR.2 ))
@@ -106,5 +106,5 @@ ERROR:
    parse value ERROR.2 ERROR.1 with sigl result
    if ERROR.1 == 'RESULT'  then  drop result
    trace ?L                      /* -- interactive label trace -- */
-ERROR:   if condition() = 'CALL' then  return 1
-                                 else  exit 1
+ERROR:   if condition() = 'SIGNAL'  then  exit 1
+                                    else  return 1
