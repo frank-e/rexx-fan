@@ -16,7 +16,7 @@ The programs in this repo are supposed to work in command line windows (`cmd.exe
 2. **[ff](https://github.com/frank-e/rexx-fan/blob/master/ff.rex "ff.rex")**: *FileFind*, slow as the Windows search unless directories are cached. [PC DOS 7](https://en.wikipedia.org/wiki/IBM_PC_DOS#7.00) [Norton](https://en.wikipedia.org/wiki/Norton_Utilities#Version_2.0) nostalgy.
 2. **[imm](https://github.com/frank-e/rexx-fan/blob/master/imm.rex "imm.rex")** and **[say](https://github.com/frank-e/rexx-fan/blob/master/say.rex "say.rex")**: Emulate KEDIT command `imm` or [Rexx][R] `say` for one-line scripts or expressions.
 2. **[md5](https://github.com/frank-e/rexx-fan/blob/master/md5.rex "md5.rex")**: [MD5](https://en.wikipedia.org/wiki/MD5) test suite 2.1 for test vectors in various IETF RFCs, replacing *xyzzy* [2.0][5], cf. [RFC 6151](https://tools.ietf.org/html/rfc6151).
-2. **[pi](https://github.com/frank-e/rexx-fan/blob/master/pi.rex "pi.rex")**: Comparison of 42 Pi algorithms (2006, was [pi.cmd](https://web.archive.org/web/20020719190406/http://frank.ellermann.bei.t-online.de:80/src/pi.cmd "Pi.cmd") in 2002). 
+2. **[pi](https://github.com/frank-e/rexx-fan/blob/master/pi.rex "pi.rex")**: Comparison of 42 Pi algorithms (2006, was [pi.cmd](https://web.archive.org/web/20020719190406/http://frank.ellermann.bei.t-online.de:80/src/pi.cmd "Pi.cmd") in 2002).
 2. **[rexxfat](https://github.com/frank-e/rexx-fan/blob/master/rexxfat.rex "rexxfat.rex")**: Create [FAT12/16/32](https://en.wikipedia.org/wiki/File_Allocation_Table#Development) superfloppy ([no MBR][M]) or [VHD][V] (MBR) image files, supports [512e](https://en.wikipedia.org/wiki/Advanced_Format#512e).
 2. **[rexxsort](https://github.com/frank-e/rexx-fan/blob/master/rexxsort.rex "rexxsort.rex")**: See [manual][3] on *xyzzy*. The `KWIK` in [ygrep.rex](../master/ygrep.rex) etc. is a copy of the *treble QSort* here.
 2. **[rxclip](https://github.com/frank-e/rexx-fan/blob/master/rxclip.rex "rxclip.rex")**: Copy to or paste from the clipboard, requires *ooRexx* with *RxWinSys.dll* `WSClipBoard()`.
@@ -38,7 +38,7 @@ The programs in this repo are supposed to work in command line windows (`cmd.exe
 The name of this repo matches [rexx-fan](https://sourceforge.net/u/rexx-fan/profile) on [SF](https://en.wikipedia.org/wiki/SourceForge "SourceForge"). For older versions of these programs try *xyzzy* [2005][0], [2011][1], or [2013][2].
 
 ## Version 0.0 ##
-*Download [v0.0.zip](https://github.com/frank-e/KEXX/archive/v0.0.zip "2020-03-21") or [tarball](https://github.com/frank-e/KEXX/archive/v0.0.tar.gz "2020-03-21")*
+*Download [v0.0.zip](https://github.com/frank-e/rexx-fan/archive/v0.0.zip "2020-03-21") or [tarball](https://github.com/frank-e/rexx-fan/archive/v0.0.tar.gz "2020-03-21")*
 
 [M]: https://en.wikipedia.org/wiki/Master_boot_record (Master Boot Record)
 [B]: https://en.wikipedia.org/wiki/UTF-16 (Unicode Transformation Format in 16 bits)
