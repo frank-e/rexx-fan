@@ -1,0 +1,7 @@
+*.rex  text eol=lf
+*.rexh text eol=lf
+*.rexp text eol=lf
+*.rexx text eol=lf
+*.cls  text eol=lf
+*.md   text eol=lf
+*.zip -text
