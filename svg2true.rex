@@ -105,12 +105,6 @@ SYSTEM:  procedure expose rc
       if V = 5 then  address SYSTEM arg( 1 )          /* Regina   */
                else  address CMD    arg( 1 )          /* (o)oRexx */
       return .RS < 0                                  /* 1: fail  */
-   end
-   if S = 'REXXSAA'  then  do    /* --- FIXME (untested code) --- */
-      parse upper source V .     /* OS/2, PC DOS 7, maybe Quercus */
-      if wordpos( 'DOS', V ) > 0 then  address COMMAND   arg( 1 )
-                                 else  address CMD       arg( 1 )
-      return rc < 0                                   /* 1: fail  */
    end                           /* Kedit KEXX 5.xy not supported */
    exit ERROR( 'Please edit procedure SYSTEM() for' S V )
 

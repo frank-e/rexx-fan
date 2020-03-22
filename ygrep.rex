@@ -157,7 +157,7 @@ KWIK.Y:  procedure expose ( THIS... )
    end       /* S == 0 */
    return value( THIS... || 0 )
 
-/* ----------------------------- (RXQUEUE portability 2016-03-05) */
+/* ----------------------------- (RXQUEUE portability 2020-03-14) */
 /* ooRexx 6.04 does not yet support ADDRESS ... WITH, otherwise   */
 /* the same syntax could get the command output in a REXX stem    */
 /* without using a REXX queue (aka REXX stack).                   */
@@ -165,8 +165,8 @@ KWIK.Y:  procedure expose ( THIS... )
 RXLIFO:  procedure expose rc
    signal off error              ;  parse version . REXX .
    LIFO = 'RxQueue' rxqueue( 'get' ) '/LIFO'
-   if REXX <> 5   then  address CMD     arg( 1 ) '|' LIFO
-                  else  address SYSTEM  arg( 1 ) '|' LIFO
+   if REXX <> 5   then  address CMD     arg( 1 ) || '|' || LIFO
+                  else  address SYSTEM  arg( 1 ) || '|' || LIFO
    return ( .RS < 0 )            /* 0: okay (any rc), 1: failure  */
 
 /* ----------------------------- (Regina SysLoadFuncs 2015-12-06) */

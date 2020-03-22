@@ -99,6 +99,9 @@
 /* - Better VHD support:  Swap H <= 16 and S to get S <= 63, and  */
 /*   interpret dummy CHS 65535 16 255 as dummy CHS 99999 255 63.  */
 
+/* Fixes and features added in 2020-03:                           */
+/* - Improved PERRR() + ERROR() portability wrappers for Regina.  */
+
 /* FAT considerations:                                            */
 /* Cluster numbers for FAT32 use 28 bits.   This results in up to */
 /* x2d( 0FFF FFF6 ) = 268435446 clusters including the two start  */
@@ -1218,19 +1221,6 @@ B64.O :  procedure               /* string to (unlimited) base64: */
    end
    return DST || copies( '=', ADD )
 
-/* ----------------------------- (STDERR: unification 2016-03-20) */
-
-PERROR:  procedure
-   parse version SAA NUM .       ;  signal off notready
-   select
-      when  SAA = 'REXXSAA' | 6 <= NUM          /* IBM or ooRexx  */
-      then  NUM = lineout( 'STDERR:'  , arg( 1 ))
-      when  NUM = 5.00                          /* Regina (maybe) */
-      then  NUM = lineout( '<STDERR>' , arg( 1 ))
-      otherwise   NUM = 1                       /* other versions */
-   end
-   if NUM   then  say arg( 1 )   ;  return 1
-
 /* ----------------------------- (REXX USAGE template 2016-03-06) */
 
 USAGE:   procedure               /* show (error +) usage message: */
@@ -1251,7 +1241,7 @@ USAGE:   procedure               /* show (error +) usage message: */
    say ' size 512.                                                '
    return 1
 
-/* ----------------------------- (RXQUEUE portability 2016-03-05) */
+/* ----------------------------- (RXQUEUE portability 2020-03-14) */
 /* ooRexx 6.04 does not yet support ADDRESS ... WITH, otherwise   */
 /* the same syntax could get the command output in a REXX stem    */
 /* without using a REXX queue (aka REXX stack).                   */
@@ -1259,8 +1249,8 @@ USAGE:   procedure               /* show (error +) usage message: */
 RXLIFO:  procedure expose rc
    signal off error              ;  parse version . REXX .
    LIFO = 'RxQueue' rxqueue( 'get' ) '/LIFO'
-   if REXX <> 5   then  address CMD     arg( 1 ) '|' LIFO
-                  else  address SYSTEM  arg( 1 ) '|' LIFO
+   if REXX <> 5   then  address CMD     arg( 1 ) || '|' || LIFO
+                  else  address SYSTEM  arg( 1 ) || '|' || LIFO
    return ( .RS < 0 )            /* 0: okay (any rc), 1: failure  */
 
 /* ----------------------------- (Regina SysLoadFuncs 2015-12-06) */
@@ -1272,7 +1262,10 @@ REGUTIL: procedure               /* Not needed for ooRexx > 6.03  */
    end                           /* static Regina has no RexxUtil */
    ERR = SysLoadFuncs()          ;  return SysUtilVersion()
 
-/* ----------------------------- (REXX ERROR template 2015-11-28) */
+/* ----------------------------- (STDERR: unification 2020-03-14) */
+/* PERROR() emulates lineout( 'STDERR:', emsg ) with ERROUT().    */
+/* ERROUT() emulates charout( 'STDERR:', emsg ).                  */
+
 /* ERROR() shows an error message and the source line number sigl */
 /* on stderr.  Examples:   if 0 = 1 then  exit ERROR( 'oops' )    */
 /*                         call ERROR 'interactive debug here'    */
@@ -1282,28 +1275,32 @@ REGUTIL: procedure               /* Not needed for ooRexx > 6.03  */
 /* SIGNAL ON NOVALUE NAME ERROR  uninitialized variable           */
 /* CALL ON NOTREADY NAME ERROR   blocked I/O (incl. EOF on input) */
 
-/* ERROR returns 1 for ordinary calls and CALL ON conditions, for */
-/* SIGNAL ON conditions ERROR exits with rc 1.                    */
+/* ERROR() uses ERROR. in the context of its caller and returns 1 */
+/* for explicit calls or CALL ON conditions.  For a SIGNAL ON ... */
+/* condition ERROR() ends with exit 1.                            */
 
-ERROR:
-   ERROR.3 = trace( 'o' )        /* disable any trace temporarily */
-   parse version ERROR.1 ERROR.2 ERROR.3
-   select                        /* unify stderr output kludges   */
-      when  abbrev( ERROR.1, 'REXX' ) = 0 then  ERROR.1 = ''
-      when  ERROR.1 == 'REXXSAA'          then  ERROR.1 = 'STDERR:'
-      when  ERROR.2 == 5.00               then  ERROR.1 = '<STDERR>'
-      when  6 <= ERROR.2 & ERROR.2 < 7    then  ERROR.1 = 'STDERR:'
-      otherwise                                 ERROR.1 = '/dev/con'
-   end
-   ERROR.3 = lineout( ERROR.1, '' )
-   ERROR.3 = right( sigl '*-*', 10 )
-   if sigl <= sourceline()       /* show source line if possible  */
-      then  ERROR.3 = ERROR.3 strip( sourceline( sigl ))
-      else  ERROR.3 = ERROR.3 '(source line unavailable)'
-   ERROR.3 = lineout( ERROR.1, ERROR.3 )
+PERROR:  return sign( ERROUT( arg( 1 ) || x2c( 0D0A )))
+ERROUT:  procedure
+   parse version S V .           ;  signal off notready
+   select
+      when  6 <= V & V < 7 then  S = 'STDERR:'        /* (o)oRexx */
+      when  S == 'REXXSAA' then  S = 'STDERR:'        /* IBM Rexx */
+      when  V == 5.00      then  S = '<STDERR>'       /* Regina   */
+      otherwise                  S = '/dev/con'       /* Quercus  */
+   end                           /* Kedit KEXX 5.xy not supported */
+   return charout( S, arg( 1 ))
+
+ERROR:                           /* trace off, save result + sigl */
+   ERROR.3 = trace( 'o' )        ;  ERROR.1 = value( 'result' )
+   ERROR.2 = sigl                ;  call PERROR
+   ERROR.3 = right( ERROR.2 '*-*', 10 )
+   if ERROR.2 <= sourceline()
+      then  call PERROR ERROR.3 strip( sourceline( ERROR.2 ))
+      else  call PERROR ERROR.3 '(source line unavailable)'
+
    ERROR.3 = right( '+++', 10 ) condition( 'c' ) condition( 'd' )
    if condition() = ''  then  ERROR.3 = right( '>>>', 10 ) arg( 1 )
-   ERROR.3 = lineout( ERROR.1, ERROR.3 )
+   call PERROR ERROR.3
    select
       when  sign( wordpos( condition( 'c' ), 'ERROR FAILURE' ))
       then  ERROR.3 = 'RC' rc
@@ -1319,10 +1316,9 @@ ERROR:
       end
       otherwise   ERROR.3 = ''
    end
-   if ERROR.3 <> ''  then  do
-      ERROR.3 = lineout( ERROR.1, right( '>>>', 10 ) ERROR.3 )
-   end
-   trace ?L                      ;  ERROR:
-   if condition() <> 'SIGNAL'
-      then  return 1             ;  else  exit 1
-
+   if ERROR.3 <> ''  then  call PERROR right( '>>>', 10 ) ERROR.3
+   parse value ERROR.2 ERROR.1 with sigl result
+   if ERROR.1 == 'RESULT'  then  drop result
+   trace ?L                      /* -- interactive label trace -- */
+ERROR:   if condition() = 'SIGNAL'  then  exit 1
+                                    else  return 1
