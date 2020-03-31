@@ -29,9 +29,9 @@
    DAT = charin( VHD, LEN + 1, CHK )
    DAT = left( DAT, SEC, x2c( 0 ))
    if \ abbrev( DAT, 'conectix' )
-                  then  exit PERROR( 'no VHD:' c2x( left( DAT, 8 )))
+                  then  exit ERROR( 'no VHD:' c2x( left( DAT, 8 )))
    ERR = c2d( substr( DAT, 60 + 1, 4 ))
-   if ERR <> 2    then  exit PERROR( 'no fixed VHD:' c2x( ERR ))
+   if ERR <> 2    then  exit ERROR( 'no fixed VHD:' c2x( ERR ))
 
    parse version . NEW .         ;  TOP = trunc( NEW )
    NEW = d2c( TOP, 2 ) || d2c( trunc( 100 * ( NEW - TOP )), 2 )
