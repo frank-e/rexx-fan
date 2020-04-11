@@ -7,7 +7,7 @@ As a macro language Rexx could be compared with [Lisp](https://en.wikipedia.org/
 
 The programs in this repo are supposed to work in command line windows (`cmd.exe` shells) on Windows 2000 or later with *[ooRexx](https://www.oorexx.org/about.html)* or *[Regina](https://sourceforge.net/projects/regina-rexx/)*, and as long as they do not use special features such as hardlinks they could still/also work on OS/2 or Linux. Please check the usual suspects such as backslashes or semicolons instead of slashes or colons on Linux.
 
-[![Classic Rexx, Regina, ooRexx](/miscellany/rexx.png)](http://home.rexxla.org/)
+[![Classic Rexx, Regina, ooRexx](/miscellany/rexx.png)](http://home.rexxla.org/ "Classic Rexx, Regina, ooRexx")
 
 1. **[7b](https://github.com/frank-e/rexx-fan/blob/master/7b.rex "7b.rex")**: binary to 7b-format (7-bit) codec + spec., claiming to be *better* than B64, for giggles.
 2. **[adhrs](https://github.com/frank-e/rexx-fan/blob/master/adhrs.rex "adhrs.rex")**: Count unusual `ADHRS` attribute combos for directories.
@@ -39,7 +39,7 @@ The programs in this repo are supposed to work in command line windows (`cmd.exe
 
 The name of this repo matches [rexx-fan](https://sourceforge.net/u/rexx-fan/profile) on [SF](https://en.wikipedia.org/wiki/SourceForge "SourceForge"). For older versions of these programs try *xyzzy* [2005][0], [2011][1], or [2013][2].
 
-[![PC DOS 7.1 REXXSAA in a very slow VM](/miscellany/pc%20dos%207.1%20(vm)%20rexxcps.png)](http://speleotrove.com/misc/rexxcpslist.html)
+[![PC DOS 7.1 REXXSAA in a very slow VM](/miscellany/pc%20dos%207.1%20(vm)%20rexxcps.png "PC DOS 7.1 REXXSAA in a very slow VM")](http://speleotrove.com/misc/rexxcpslist.html)
 
 ## Version 0.0 ##
 *Download [v0.0.zip](https://github.com/frank-e/rexx-fan/archive/v0.0.zip "2020-03-21") or [tarball](https://github.com/frank-e/rexx-fan/archive/v0.0.tar.gz "2020-03-21")*
