@@ -253,7 +253,7 @@ REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
                      else  XFAT32 = 9 - PARTED  /* 1+7+8 or 0+7+9 */
       if sign(( NOS + PARTED ) // 8 ) | sign( MINDIR // 8 ) then  do
          N = '512e requires multiples of 8 sectors; got'
-         return PERROR( N NOS + PARTED 'with MINDIR' MINDIR )
+         return XERROR( N NOS + PARTED 'with MINDIR' MINDIR )
       end
    end
    if wordpos( SECLEN, SECSUP ) = 0 then  return USAGE( SECLEN )
@@ -322,7 +322,7 @@ REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
          RAW = RES + FS * NUMFAT + DIR + CS * CN
          if RAW <> NOS  then  do
             RAW = NOS '<>' RAW '=' RES '+' FS '*' NUMFAT '+' DIR
-            return PERROR( 'assertion failed:' RAW '+' CS '*' CN )
+            return XERROR( 'assertion failed:' RAW '+' CS '*' CN )
          end
       end FLOOP
    end CLOOP
@@ -350,7 +350,7 @@ REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
    select
       when  F.0 = 0  then  do
          L = 'Found no FAT for' NOS 'sectors,' NUMFAT 'FATs,'
-         return PERROR( L 'and' MINDIR 'root dir. sectors' )
+         return XERROR( L 'and' MINDIR 'root dir. sectors' )
       end
       when  N        then  say 'Uses a' L
       when  F.0 = 1  then  L = 'Pick a' L
@@ -375,11 +375,11 @@ REXXFAT: procedure               /* REXXFAT wrapper for FATTEST() */
    L = ( NOS + PARTED ) * SECLEN
    if 0 <= SPARSE & SPARSE <= L  then  do
       L = 'cannot format' L 'bytes for' VFD '(free:' SPARSE || ')'
-      return PERROR( L )         /* SPARSE requires NTFS + FSUTIL */
+      return XERROR( L )         /* SPARSE requires NTFS + FSUTIL */
    end
    if stream( VFD, 'c', 'query exists' ) <> ''  then  do
       L = SysFileDelete( VFD )
-      if L <> 0   then  return PERROR( L || ': cannot create' VFD )
+      if L <> 0   then  return XERROR( L || ': cannot create' VFD )
    end
 
    /* ----------------------------------------------------------- */
@@ -611,7 +611,7 @@ _TEXT    ends
       PAD = max( 0, MINVFD % SECLEN - NOS )
       if PAD > 0  then  do
          call FILLSEC VFD, PAD, x2c( 'FF' )
-         call PERROR 'VFD padded to min.' MINVFD % SECLEN 'sectors'
+         call XERROR 'VFD padded to min.' MINVFD % SECLEN 'sectors'
          PAD = SECLEN * PAD
       end
    end
@@ -619,7 +619,7 @@ _TEXT    ends
 
    N = stream( VFD, 'c', 'query size' ) - PAD
    if N / SECLEN <> NOS + PARTED then  do
-      return PERROR( N / SECLEN '<>' NOS + PARTED )
+      return XERROR( N / SECLEN '<>' NOS + PARTED )
    end                           /* last chance for stupid errors */
    N = c2x( reverse( VOLSER ))   ;  call charout VFD
    N = '[' || left( N, 4 ) || '-' || right( N, 4 ) || ']'
@@ -832,6 +832,7 @@ FATSIZE: procedure expose SECLEN /* convert cluster number CN to  */
 
 /* -------------------------------------------------------------- */
 RD2C:    return reverse( d2c( arg( 1 ), arg( 2 )))
+XERROR:  return 1 | PERROR( arg( 1 ))
 
 /* -------------------------------------------------------------- */
 MAKEID:  procedure               /* emulate DOS idea of unique ID */
@@ -878,7 +879,7 @@ MAKEVHD: procedure expose SECLEN MINVHD
    end H
    if C * H * S <> LEN | C > 65535 | S > 255 then  do
       parse value 65535 16 255 with C H S
-      call PERROR 'Please check dummy 16+4+8=28 bits VHD geometry.'
+      call XERROR 'Please check dummy 16+4+8=28 bits VHD geometry.'
    end
 
    BUF = left( 'conectix', 8 )   /* 2 = reserved VHD feature flag */
@@ -1037,14 +1038,14 @@ FATTEST: procedure               /* self tests need admin rights  */
          else  ERR = REXXFAT( -1, NOS, MINDIR, NUMFAT, SECLEN )
       if ERR <> 0 then  do
          if EXTRA <> '' then  iterate N
-                        else  return PERROR( 'test' N 'FAIL MIA' )
+                        else  return XERROR( 'test' N 'FAIL MIA' )
       end                        /* wanted no error, got ERR <> 0 */
-      if EXTRA <> ''    then  return PERROR( 'test' N 'FAIL' EXTRA )
+      if EXTRA <> ''    then  return XERROR( 'test' N 'FAIL' EXTRA )
       if NOS < 0  then  do
          if ( SECLEN = -512 ) then  call PERROR CHKDSK.2
          ERR = FATTERR( NOS )   /* CMD requiring SIGNAL OFF ERROR */
          if ( ERR = 0 ) = ( SECLEN = -512 )  then  do
-            return PERROR( 'test' N 'FAIL: CHKDSK exit code' ERR )
+            return XERROR( 'test' N 'FAIL: CHKDSK exit code' ERR )
          end
       end
    end N
@@ -1069,24 +1070,24 @@ ATTACH:  procedure               /* attach VHD file for FATTEST() */
    OBS = LEN - 511               ;  signal off error
    if OBS // 512 = 1 then  OBS = LEN - 512
    if OBS // 512 = 0 then  OBS = NOS <> 0 & OBS <> NOS * 512
-   if OBS <> 0 then  exit PERROR( 'missing or unexpected' VHD )
+   if OBS <> 0 then  exit XERROR( 'missing or unexpected' VHD )
 
    call SysFileDelete TMP        ;  OBS = SysDriveMap()
    LEN = 0 || stream( TMP, 'c', 'query size' )
-   if LEN <> 0 then  exit PERROR( 'cannot delete' TMP )
+   if LEN <> 0 then  exit XERROR( 'cannot delete' TMP )
    call lineout TMP, 'select vdisk file="' || VHD || '"'
    if NOS = 0  then  call lineout TMP, 'detach vdisk'
                else  call lineout TMP, 'attach vdisk'
    call lineout TMP, 'exit'      ;  call lineout TMP
    address CMD '@diskpart /S "' || TMP || '">NUL'
-   if rc <> 0  then  exit PERROR( 'diskpart /S' TMP '[' rc ']' )
+   if rc <> 0  then  exit XERROR( 'diskpart /S' TMP '[' rc ']' )
    call SysFileDelete TMP        ;  MAP = SysDriveMap()
    parse var MAP OBJ MAP
    do while sign( wordpos( OBJ, OBS ))
       parse var MAP OBJ MAP      /* ignore race conditions, first */
    end                           /* new drive letter for test VHD */
    if NOS = 0 | OBJ <> ''  then  return OBJ
-   exit PERROR( 'cannot attach' VHD )
+   exit XERROR( 'cannot attach' VHD )
 
 /* ----------------------------- (Regina SysLoadFuncs 2015-12-06) */
 
